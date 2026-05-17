@@ -23,7 +23,7 @@ This repository contains the GitHub Pages frontend for `GuangHouGong/fortune-dra
 - Keep `vite.config.ts` base set to `/fortune-draw-wheel/`.
 - Store draw settings and winner history in `localStorage`.
 - Use `crypto.getRandomValues` for draw randomness.
-- The recommended participant count is 120 or fewer; the hard UI limit is 500 participants.
+- The recommended participant count is 100 or fewer; the hard UI limit is 200 participants.
 - Participants can be numeric IDs or real names. Keep names with spaces intact by entering one participant per line or using comma separators.
 - Preserve the Taiwanese temple event style: red, gold, readable Chinese typography, and projection-friendly sizing.
 - Required public assets live in `public/assets/`.
