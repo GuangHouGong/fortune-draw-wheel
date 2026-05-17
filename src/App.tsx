@@ -297,7 +297,6 @@ export default function App() {
           <img src={`${import.meta.env.BASE_URL}assets/logo.svg`} alt="" />
         </div>
         <div className="brand-title">
-          <p>土城廣厚宮</p>
           <h1>土地公功德會抽獎</h1>
           <button type="button" className="guide-open-button" onClick={() => setIsGuideOpen(true)}>
             使用說明
