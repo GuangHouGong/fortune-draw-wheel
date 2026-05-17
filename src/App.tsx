@@ -5,9 +5,11 @@ import WinnerHistory from './components/WinnerHistory';
 import {
   createDefaultParticipants,
   getAvailableParticipants,
+  MAX_PARTICIPANT_COUNT,
   parseParticipants,
   participantsToText,
   randomIndex,
+  RECOMMENDED_PARTICIPANT_COUNT,
 } from './utils/participants';
 import { downloadCsv, winnerHistoryToCsv, type WinnerRecord } from './utils/csv';
 
@@ -55,6 +57,7 @@ export default function App() {
   const [currentWinner, setCurrentWinner] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
+  const [quickCount, setQuickCount] = useState(RECOMMENDED_PARTICIPANT_COUNT);
   const rotationRef = useRef(rotation);
   const pendingWinnerRef = useRef<string | null>(null);
 
@@ -66,6 +69,7 @@ export default function App() {
   );
 
   const isBusy = phase === 'spinning' || phase === 'stopping';
+  const isOverParticipantLimit = participants.length > MAX_PARTICIPANT_COUNT;
 
   useEffect(() => {
     rotationRef.current = rotation;
@@ -114,6 +118,11 @@ export default function App() {
   function startDraw() {
     if (participants.length === 0) {
       setNotice('請先輸入抽獎編號。');
+      return;
+    }
+
+    if (isOverParticipantLimit) {
+      setNotice(`目前名單 ${participants.length} 人，最多支援 ${MAX_PARTICIPANT_COUNT} 人。`);
       return;
     }
 
@@ -194,7 +203,15 @@ export default function App() {
 
   function resetParticipants() {
     setParticipantInput(defaultParticipantsText);
+    setQuickCount(RECOMMENDED_PARTICIPANT_COUNT);
     setNotice('名單已重設為 1-120。');
+  }
+
+  function generateSequentialParticipants() {
+    const safeCount = Math.min(Math.max(Math.trunc(quickCount) || 1, 1), MAX_PARTICIPANT_COUNT);
+    setQuickCount(safeCount);
+    setParticipantInput(participantsToText(createDefaultParticipants(safeCount)));
+    setNotice(`已產生 1-${safeCount} 的抽獎名單。`);
   }
 
   function clearWinnerHistory() {
@@ -281,10 +298,16 @@ export default function App() {
             totalCount={participants.length}
             availableCount={availableParticipants.length}
             winnerCount={winnerHistory.length}
+            recommendedCount={RECOMMENDED_PARTICIPANT_COUNT}
+            maxCount={MAX_PARTICIPANT_COUNT}
+            quickCount={quickCount}
+            isOverLimit={isOverParticipantLimit}
             allowRepeat={allowRepeat}
             disabled={isBusy}
             onChange={setParticipantInput}
             onReset={resetParticipants}
+            onQuickCountChange={setQuickCount}
+            onGenerateSequential={generateSequentialParticipants}
             onToggleAllowRepeat={setAllowRepeat}
           />
 

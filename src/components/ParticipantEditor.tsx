@@ -3,10 +3,16 @@ type ParticipantEditorProps = {
   totalCount: number;
   availableCount: number;
   winnerCount: number;
+  recommendedCount: number;
+  maxCount: number;
+  quickCount: number;
+  isOverLimit: boolean;
   allowRepeat: boolean;
   disabled: boolean;
   onChange: (value: string) => void;
   onReset: () => void;
+  onQuickCountChange: (count: number) => void;
+  onGenerateSequential: () => void;
   onToggleAllowRepeat: (allowRepeat: boolean) => void;
 };
 
@@ -15,10 +21,16 @@ export default function ParticipantEditor({
   totalCount,
   availableCount,
   winnerCount,
+  recommendedCount,
+  maxCount,
+  quickCount,
+  isOverLimit,
   allowRepeat,
   disabled,
   onChange,
   onReset,
+  onQuickCountChange,
+  onGenerateSequential,
   onToggleAllowRepeat,
 }: ParticipantEditorProps) {
   return (
@@ -30,7 +42,7 @@ export default function ParticipantEditor({
         </button>
       </div>
 
-      <div className="stats-grid" aria-label="抽獎統計">
+      <div className={`stats-grid ${isOverLimit ? 'is-over-limit' : ''}`} aria-label="抽獎統計">
         <div>
           <span>總名單</span>
           <strong>{totalCount}</strong>
@@ -43,11 +55,19 @@ export default function ParticipantEditor({
           <span>已中獎</span>
           <strong>{winnerCount}</strong>
         </div>
+        <div>
+          <span>上限</span>
+          <strong>{maxCount}</strong>
+        </div>
       </div>
 
       <label className="textarea-label" htmlFor="participant-input">
-        編號輸入
+        自訂名單
       </label>
+      <p className="field-hint">
+        可自行貼上或輸入名單，支援換行、逗號、空白分隔。建議 {recommendedCount} 人內，最多 {maxCount}{' '}
+        人。
+      </p>
       <textarea
         id="participant-input"
         value={value}
@@ -56,6 +76,24 @@ export default function ParticipantEditor({
         placeholder={'1\n2\n3\n或：1, 2, 3'}
         spellCheck={false}
       />
+      {isOverLimit ? <p className="limit-warning">目前超過最多 {maxCount} 人，請刪減名單後再抽獎。</p> : null}
+
+      <div className="quick-generate" aria-label="快速產生連號名單">
+        <label htmlFor="quick-count">快速產生 1 到</label>
+        <input
+          id="quick-count"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={maxCount}
+          value={quickCount}
+          disabled={disabled}
+          onChange={(event) => onQuickCountChange(Number(event.target.value))}
+        />
+        <button type="button" className="button button-ghost" onClick={onGenerateSequential} disabled={disabled}>
+          產生
+        </button>
+      </div>
 
       <label className="switch-row">
         <input

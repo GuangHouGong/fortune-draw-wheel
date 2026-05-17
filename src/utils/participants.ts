@@ -1,4 +1,6 @@
 export const DEFAULT_PARTICIPANT_COUNT = 120;
+export const RECOMMENDED_PARTICIPANT_COUNT = 120;
+export const MAX_PARTICIPANT_COUNT = 500;
 
 export function createDefaultParticipants(count = DEFAULT_PARTICIPANT_COUNT): string[] {
   return Array.from({ length: count }, (_, index) => String(index + 1));

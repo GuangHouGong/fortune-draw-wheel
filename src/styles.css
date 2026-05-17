@@ -445,7 +445,7 @@ input:disabled {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin-bottom: 14px;
 }
@@ -474,6 +474,24 @@ input:disabled {
   font-weight: 950;
 }
 
+.stats-grid.is-over-limit div:first-child {
+  border-color: rgba(177, 15, 24, 0.58);
+  background: #ffe3d1;
+}
+
+.field-hint,
+.limit-warning {
+  margin: -2px 0 10px;
+  color: #7b4a28;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.limit-warning {
+  margin: 9px 0 0;
+  color: #9f0e19;
+}
+
 .textarea-label {
   display: block;
   margin-bottom: 8px;
@@ -498,6 +516,27 @@ textarea {
 textarea:focus {
   border-color: #c81622;
   box-shadow: 0 0 0 4px rgba(248, 201, 74, 0.38);
+}
+
+.quick-generate {
+  display: grid;
+  grid-template-columns: auto minmax(78px, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  margin-top: 12px;
+  color: #67150d;
+  font-weight: 900;
+}
+
+.quick-generate input {
+  min-width: 0;
+  height: 42px;
+  border: 2px solid rgba(126, 13, 22, 0.24);
+  border-radius: 10px;
+  padding: 7px 10px;
+  background: #fffdf1;
+  color: #44190a;
+  font-weight: 900;
 }
 
 .switch-row {
@@ -763,6 +802,10 @@ textarea:focus {
   }
 
   .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .quick-generate {
     grid-template-columns: 1fr;
   }
 }
