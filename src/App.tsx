@@ -321,7 +321,6 @@ export default function App() {
         </aside>
       </main>
 
-      <footer className="site-footer">Open Source Project by GuangHouGong</footer>
     </div>
   );
 }

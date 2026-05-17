@@ -672,13 +672,6 @@ textarea:focus {
   text-align: center;
 }
 
-.site-footer {
-  padding: 16px;
-  color: #6d210d;
-  font-weight: 850;
-  text-align: center;
-}
-
 .is-fullscreen {
   min-height: 100vh;
 }
