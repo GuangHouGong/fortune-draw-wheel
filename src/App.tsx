@@ -117,7 +117,7 @@ export default function App() {
 
   function startDraw() {
     if (participants.length === 0) {
-      setNotice('請先輸入抽獎編號。');
+      setNotice('請先輸入抽獎名單。');
       return;
     }
 
@@ -270,8 +270,13 @@ export default function App() {
             onStopAnimationEnd={handleStopAnimationEnd}
           />
 
-          <div className={`result-burst ${currentWinner ? 'show' : ''}`} aria-live="assertive">
-            <span>中獎號碼</span>
+          <div
+            className={`result-burst ${currentWinner ? 'show' : ''} ${
+              currentWinner && currentWinner.length > 8 ? 'is-long' : ''
+            }`}
+            aria-live="assertive"
+          >
+            <span>中獎者</span>
             <strong>{currentWinner ?? '--'}</strong>
           </div>
 

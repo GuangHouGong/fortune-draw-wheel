@@ -65,21 +65,21 @@ export default function ParticipantEditor({
         自訂名單
       </label>
       <p className="field-hint">
-        可自行貼上或輸入名單，支援換行、逗號、空白分隔。建議 {recommendedCount} 人內，最多 {maxCount}{' '}
-        人。
+        可自行貼上編號或姓名。姓名建議一行一位或逗號分隔；純編號也支援空白分隔。建議 {recommendedCount}{' '}
+        人內，最多 {maxCount} 人。
       </p>
       <textarea
         id="participant-input"
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        placeholder={'1\n2\n3\n或：1, 2, 3'}
+        placeholder={'1\n2\n王小明\n李小華\n或：1, 2, 王小明, 李小華'}
         spellCheck={false}
       />
       {isOverLimit ? <p className="limit-warning">目前超過最多 {maxCount} 人，請刪減名單後再抽獎。</p> : null}
 
       <div className="quick-generate" aria-label="快速產生連號名單">
-        <label htmlFor="quick-count">快速產生 1 到</label>
+        <label htmlFor="quick-count">快速產生編號 1 到</label>
         <input
           id="quick-count"
           type="number"

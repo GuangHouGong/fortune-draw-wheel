@@ -314,13 +314,21 @@ input:disabled {
 }
 
 .result-burst strong {
+  max-width: calc(100% - 36px);
   color: #b10f18;
   font-size: clamp(3.6rem, 11vw, 8rem);
   line-height: 0.98;
   font-weight: 950;
+  overflow-wrap: anywhere;
+  text-align: center;
   text-shadow:
     0 3px 0 #fff4b9,
     0 8px 24px rgba(119, 13, 16, 0.2);
+}
+
+.result-burst.is-long strong {
+  font-size: clamp(2.35rem, 7vw, 5.1rem);
+  line-height: 1.08;
 }
 
 .result-burst.show strong {

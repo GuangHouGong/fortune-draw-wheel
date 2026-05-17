@@ -16,7 +16,7 @@ function escapeCsvCell(value: string | number): string {
 
 export function winnerHistoryToCsv(records: WinnerRecord[]): string {
   const rows = [
-    ['round', 'winner_id', 'drawn_at'],
+    ['round', 'winner', 'drawn_at'],
     ...records.map((record) => [record.round, record.id, record.drawnAt]),
   ];
 

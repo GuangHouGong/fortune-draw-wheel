@@ -40,6 +40,10 @@ function readableRotation(angleFromTop: number): number {
   return normalized > 90 && normalized < 270 ? angleFromTop + 180 : angleFromTop;
 }
 
+function formatWheelLabel(participant: string): string {
+  return participant.length > 8 ? `${participant.slice(0, 8)}…` : participant;
+}
+
 export default function Wheel({
   participants,
   rotation,
@@ -50,7 +54,18 @@ export default function Wheel({
 }: WheelProps) {
   const sliceAngle = participants.length > 0 ? 360 / participants.length : 360;
   const labelStep = participants.length <= 42 ? 1 : Math.ceil(participants.length / 42);
-  const fontSize = participants.length <= 24 ? 28 : participants.length <= 60 ? 22 : 16;
+  const hasLongLabels = participants.some((participant) => participant.length > 4);
+  const fontSize = hasLongLabels
+    ? participants.length <= 24
+      ? 20
+      : participants.length <= 60
+        ? 15
+        : 12
+    : participants.length <= 24
+      ? 28
+      : participants.length <= 60
+        ? 22
+        : 16;
 
   return (
     <div className="wheel-shell" aria-live="polite">
@@ -72,7 +87,7 @@ export default function Wheel({
             className="wheel-svg"
             viewBox={`0 0 ${WHEEL_SIZE} ${WHEEL_SIZE}`}
             role="img"
-            aria-label={`抽獎輪盤，共 ${participants.length} 個編號`}
+            aria-label={`抽獎輪盤，共 ${participants.length} 位參加者`}
           >
             <defs>
               <filter id="wheelInset" x="-20%" y="-20%" width="140%" height="140%">
@@ -110,7 +125,7 @@ export default function Wheel({
                         fontSize={fontSize}
                         transform={`rotate(${readableRotation(midAngle)} ${label.x} ${label.y})`}
                       >
-                        {participant}
+                        {formatWheelLabel(participant)}
                       </text>
                     ) : null}
                   </g>

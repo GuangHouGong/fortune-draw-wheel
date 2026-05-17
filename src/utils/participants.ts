@@ -10,12 +10,43 @@ export function participantsToText(participants: string[]): string {
   return participants.join('\n');
 }
 
+function normalizeParticipantName(value: string): string {
+  return value.trim().replace(/\s+/g, ' ');
+}
+
+function splitParticipantSegment(segment: string, shouldSplitWhitespace: boolean): string[] {
+  const normalizedSegment = normalizeParticipantName(segment);
+
+  if (!normalizedSegment) {
+    return [];
+  }
+
+  const whitespaceParts = normalizedSegment.split(/\s+/u).filter(Boolean);
+
+  if (whitespaceParts.length <= 1) {
+    return [normalizedSegment];
+  }
+
+  if (shouldSplitWhitespace) {
+    return whitespaceParts;
+  }
+
+  return [normalizedSegment];
+}
+
 export function parseParticipants(input: string): string[] {
   const seen = new Set<string>();
-  const tokens = input
-    .split(/[\s,，、]+/u)
-    .map((token) => token.trim())
-    .filter(Boolean);
+  const hasLineBreaks = /\r?\n/u.test(input);
+  const lines = hasLineBreaks ? input.split(/\r?\n/u) : [input];
+  const tokens = lines.flatMap((line) => {
+    const commaSegments = line.split(/[,，、;；]+/u);
+    const hasCommaSeparators = commaSegments.length > 1;
+
+    return commaSegments.flatMap((segment) => {
+      const shouldSplitWhitespace = !hasCommaSeparators && (!hasLineBreaks || /^(\s*\d+\s*)+$/u.test(segment));
+      return splitParticipantSegment(segment, shouldSplitWhitespace);
+    });
+  });
 
   return tokens.filter((token) => {
     if (seen.has(token)) {
