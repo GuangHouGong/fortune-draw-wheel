@@ -298,7 +298,7 @@ export default function App() {
         </div>
         <div className="brand-title">
           <p>土城廣厚宮</p>
-          <h1>福德正神・玄壇財神抽獎輪盤</h1>
+          <h1>土地宮功德會抽獎</h1>
           <button type="button" className="guide-open-button" onClick={() => setIsGuideOpen(true)}>
             使用說明
           </button>
@@ -306,7 +306,7 @@ export default function App() {
         <img
           className="mascot-image"
           src={`${import.meta.env.BASE_URL}assets/guanghougong-mascot.png`}
-          alt="土城廣厚宮福德正神與玄壇財神主視覺"
+          alt="土地宮功德會抽獎主視覺"
         />
       </header>
 

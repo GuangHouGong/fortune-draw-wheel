@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="土城廣厚宮福德正神・玄壇財神抽獎輪盤">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="土地宮功德會抽獎">
   <defs>
     <radialGradient id="shine" cx="20%" cy="15%" r="65%">
       <stop offset="0%" stop-color="#fff7c5"/>
@@ -27,7 +27,7 @@
     <text x="232" y="272" text-anchor="middle" font-size="104" font-family="serif" font-weight="900" fill="#9d0e18">福</text>
   </g>
   <rect x="520" y="118" width="590" height="320" rx="34" fill="url(#bar)" stroke="#f6d45f" stroke-width="10"/>
-  <text x="815" y="204" text-anchor="middle" font-family="Noto Sans TC, Microsoft JhengHei, sans-serif" font-size="64" font-weight="900" fill="#fff3b0">土城廣厚宮</text>
-  <text x="815" y="292" text-anchor="middle" font-family="Noto Sans TC, Microsoft JhengHei, sans-serif" font-size="54" font-weight="900" fill="#ffffff">福德正神・玄壇財神</text>
-  <text x="815" y="372" text-anchor="middle" font-family="Noto Sans TC, Microsoft JhengHei, sans-serif" font-size="68" font-weight="900" fill="#ffe16c">抽獎輪盤</text>
+  <text x="815" y="214" text-anchor="middle" font-family="Noto Sans TC, Microsoft JhengHei, sans-serif" font-size="66" font-weight="900" fill="#fff3b0">土地宮功德會</text>
+  <text x="815" y="306" text-anchor="middle" font-family="Noto Sans TC, Microsoft JhengHei, sans-serif" font-size="76" font-weight="900" fill="#ffe16c">抽獎</text>
+  <text x="815" y="386" text-anchor="middle" font-family="Noto Sans TC, Microsoft JhengHei, sans-serif" font-size="48" font-weight="900" fill="#ffffff">活動輪盤</text>
 </svg>
