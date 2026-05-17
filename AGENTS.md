@@ -4,7 +4,7 @@
 
 This repository contains the GitHub Pages frontend for `GuangHouGong/fortune-draw-wheel`.
 
-- App name: 土地宮功德會抽獎
+- App name: 土地公功德會抽獎
 - Stack: Vite + React + TypeScript
 - Runtime: static frontend only, no backend and no database
 - Deployment base path: `/fortune-draw-wheel/`
