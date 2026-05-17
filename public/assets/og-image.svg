@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" role="img" aria-label="土城廣厚宮福德正神・玄壇財神抽獎輪盤">
+  <defs>
+    <radialGradient id="shine" cx="20%" cy="15%" r="65%">
+      <stop offset="0%" stop-color="#fff7c5"/>
+      <stop offset="45%" stop-color="#f7c642"/>
+      <stop offset="100%" stop-color="#a90f1c"/>
+    </radialGradient>
+    <linearGradient id="bar" x1="0" x2="1">
+      <stop offset="0%" stop-color="#8d0a16"/>
+      <stop offset="50%" stop-color="#c91823"/>
+      <stop offset="100%" stop-color="#8d0a16"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#97101a"/>
+  <circle cx="180" cy="80" r="280" fill="#f6d45f" opacity="0.65"/>
+  <circle cx="1010" cy="540" r="300" fill="#f4b820" opacity="0.28"/>
+  <g transform="translate(92 88)">
+    <circle cx="232" cy="232" r="218" fill="#6d0710"/>
+    <path d="M232 14a218 218 0 0 1 189 109L232 232Z" fill="#f7c642"/>
+    <path d="M421 123a218 218 0 0 1 0 218L232 232Z" fill="#d82324"/>
+    <path d="M421 341a218 218 0 0 1-189 109V232Z" fill="#ffe39a"/>
+    <path d="M232 450A218 218 0 0 1 43 341l189-109Z" fill="#b90f1d"/>
+    <path d="M43 341a218 218 0 0 1 0-218l189 109Z" fill="#f7b51d"/>
+    <path d="M43 123A218 218 0 0 1 232 14v218Z" fill="#d33a17"/>
+    <circle cx="232" cy="232" r="226" fill="none" stroke="#fff0a8" stroke-width="18"/>
+    <circle cx="232" cy="232" r="86" fill="#f7c642" stroke="#fff4b7" stroke-width="12"/>
+    <text x="232" y="272" text-anchor="middle" font-size="104" font-family="serif" font-weight="900" fill="#9d0e18">福</text>
+  </g>
+  <rect x="520" y="118" width="590" height="320" rx="34" fill="url(#bar)" stroke="#f6d45f" stroke-width="10"/>
+  <text x="815" y="204" text-anchor="middle" font-family="Noto Sans TC, Microsoft JhengHei, sans-serif" font-size="64" font-weight="900" fill="#fff3b0">土城廣厚宮</text>
+  <text x="815" y="292" text-anchor="middle" font-family="Noto Sans TC, Microsoft JhengHei, sans-serif" font-size="54" font-weight="900" fill="#ffffff">福德正神・玄壇財神</text>
+  <text x="815" y="372" text-anchor="middle" font-family="Noto Sans TC, Microsoft JhengHei, sans-serif" font-size="68" font-weight="900" fill="#ffe16c">抽獎輪盤</text>
+  <text x="815" y="500" text-anchor="middle" font-family="Noto Sans TC, Microsoft JhengHei, sans-serif" font-size="34" font-weight="800" fill="#fff5c8">Open Source Project by GuangHouGong</text>
+</svg>

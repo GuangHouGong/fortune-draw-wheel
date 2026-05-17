@@ -1,0 +1,304 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import ParticipantEditor from './components/ParticipantEditor';
+import Wheel from './components/Wheel';
+import WinnerHistory from './components/WinnerHistory';
+import {
+  createDefaultParticipants,
+  getAvailableParticipants,
+  parseParticipants,
+  participantsToText,
+  randomIndex,
+} from './utils/participants';
+import { downloadCsv, winnerHistoryToCsv, type WinnerRecord } from './utils/csv';
+
+const STORAGE_KEYS = {
+  participants: 'fortune-draw-wheel:participants',
+  winners: 'fortune-draw-wheel:winners',
+  allowRepeat: 'fortune-draw-wheel:allow-repeat',
+} as const;
+
+type DrawPhase = 'idle' | 'spinning' | 'stopping';
+
+function readStoredWinners(): WinnerRecord[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.winners);
+    if (!raw) {
+      return [];
+    }
+
+    const parsed = JSON.parse(raw) as WinnerRecord[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function normalizeDegrees(degrees: number): number {
+  return ((degrees % 360) + 360) % 360;
+}
+
+function createCsvFilename(): string {
+  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  return `fortune-draw-winners-${date}.csv`;
+}
+
+export default function App() {
+  const defaultParticipantsText = useMemo(() => participantsToText(createDefaultParticipants()), []);
+  const [participantInput, setParticipantInput] = useState(() => {
+    return localStorage.getItem(STORAGE_KEYS.participants) ?? defaultParticipantsText;
+  });
+  const [winnerHistory, setWinnerHistory] = useState<WinnerRecord[]>(readStoredWinners);
+  const [allowRepeat, setAllowRepeat] = useState(() => localStorage.getItem(STORAGE_KEYS.allowRepeat) === 'true');
+  const [phase, setPhase] = useState<DrawPhase>('idle');
+  const [rotation, setRotation] = useState(0);
+  const [wheelTransition, setWheelTransition] = useState('none');
+  const [currentWinner, setCurrentWinner] = useState<string | null>(null);
+  const [notice, setNotice] = useState('');
+  const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
+  const rotationRef = useRef(rotation);
+  const pendingWinnerRef = useRef<string | null>(null);
+
+  const participants = useMemo(() => parseParticipants(participantInput), [participantInput]);
+  const winnerIds = useMemo(() => winnerHistory.map((record) => record.id), [winnerHistory]);
+  const availableParticipants = useMemo(
+    () => getAvailableParticipants(participants, winnerIds, allowRepeat),
+    [allowRepeat, participants, winnerIds],
+  );
+
+  const isBusy = phase === 'spinning' || phase === 'stopping';
+
+  useEffect(() => {
+    rotationRef.current = rotation;
+  }, [rotation]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.participants, participantInput);
+  }, [participantInput]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.winners, JSON.stringify(winnerHistory));
+  }, [winnerHistory]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.allowRepeat, String(allowRepeat));
+  }, [allowRepeat]);
+
+  useEffect(() => {
+    function handleFullscreenChange() {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== 'spinning') {
+      return undefined;
+    }
+
+    let animationFrame = 0;
+    let previousTimestamp = performance.now();
+
+    const tick = (timestamp: number) => {
+      const elapsedSeconds = Math.min((timestamp - previousTimestamp) / 1000, 0.05);
+      previousTimestamp = timestamp;
+      setRotation((previousRotation) => previousRotation + elapsedSeconds * 980);
+      animationFrame = requestAnimationFrame(tick);
+    };
+
+    animationFrame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(animationFrame);
+  }, [phase]);
+
+  function startDraw() {
+    if (participants.length === 0) {
+      setNotice('請先輸入抽獎編號。');
+      return;
+    }
+
+    if (availableParticipants.length === 0) {
+      setNotice('剩餘可抽名單為空，請清除中獎紀錄或開啟重複中獎。');
+      return;
+    }
+
+    setWheelTransition('none');
+    setCurrentWinner(null);
+    setNotice('');
+    pendingWinnerRef.current = null;
+    setPhase('spinning');
+  }
+
+  function stopDraw() {
+    if (availableParticipants.length === 0) {
+      setNotice('剩餘可抽名單為空，請清除中獎紀錄或開啟重複中獎。');
+      setPhase('idle');
+      return;
+    }
+
+    const winningCandidate = availableParticipants[randomIndex(availableParticipants.length)];
+    const winningIndex = participants.findIndex((participant) => participant === winningCandidate);
+
+    if (winningIndex < 0) {
+      setNotice('名單狀態已變更，請重新開始抽獎。');
+      setPhase('idle');
+      return;
+    }
+
+    const sliceAngle = 360 / participants.length;
+    const segmentCenter = (winningIndex + 0.5) * sliceAngle;
+    const currentRotation = rotationRef.current;
+    const currentNormalized = normalizeDegrees(currentRotation);
+    const targetNormalized = normalizeDegrees(360 - segmentCenter);
+    const slowDownDelta = normalizeDegrees(targetNormalized - currentNormalized);
+    const finalRotation = currentRotation + slowDownDelta + 360 * 7;
+
+    pendingWinnerRef.current = winningCandidate;
+    setCurrentWinner(winningCandidate);
+    setNotice('');
+    setPhase('stopping');
+    setWheelTransition('transform 5200ms cubic-bezier(0.08, 0.72, 0.11, 1)');
+    requestAnimationFrame(() => setRotation(finalRotation));
+  }
+
+  function handlePrimaryAction() {
+    if (phase === 'idle') {
+      startDraw();
+      return;
+    }
+
+    if (phase === 'spinning') {
+      stopDraw();
+    }
+  }
+
+  function handleStopAnimationEnd() {
+    if (phase !== 'stopping' || !pendingWinnerRef.current) {
+      return;
+    }
+
+    const winner = pendingWinnerRef.current;
+    pendingWinnerRef.current = null;
+    setWheelTransition('none');
+    setWinnerHistory((records) => [
+      {
+        id: winner,
+        round: records.length + 1,
+        drawnAt: new Date().toISOString(),
+      },
+      ...records,
+    ]);
+    setNotice(`恭喜 ${winner} 中獎`);
+    setPhase('idle');
+  }
+
+  function resetParticipants() {
+    setParticipantInput(defaultParticipantsText);
+    setNotice('名單已重設為 1-120。');
+  }
+
+  function clearWinnerHistory() {
+    const confirmed = window.confirm('確定清除全部中獎紀錄？');
+    if (!confirmed) {
+      return;
+    }
+
+    setWinnerHistory([]);
+    setCurrentWinner(null);
+    setNotice('中獎紀錄已清除。');
+  }
+
+  function exportWinnerHistory() {
+    const chronologicalRecords = [...winnerHistory].reverse();
+    downloadCsv(createCsvFilename(), winnerHistoryToCsv(chronologicalRecords));
+  }
+
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else {
+        await document.documentElement.requestFullscreen();
+      }
+    } catch {
+      setNotice('無法切換全螢幕，請確認瀏覽器權限。');
+    }
+  }
+
+  return (
+    <div className={`app-shell ${isFullscreen ? 'is-fullscreen' : ''}`}>
+      <header className="temple-header">
+        <div className="brand-mark">
+          <img src={`${import.meta.env.BASE_URL}assets/logo.svg`} alt="" />
+        </div>
+        <div className="brand-title">
+          <p>土城廣厚宮</p>
+          <h1>福德正神・玄壇財神抽獎輪盤</h1>
+        </div>
+        <img
+          className="mascot-image"
+          src={`${import.meta.env.BASE_URL}assets/guanghougong-mascot.png`}
+          alt="土城廣厚宮福德正神與玄壇財神主視覺"
+        />
+      </header>
+
+      <main className="draw-layout">
+        <section className="wheel-stage" aria-label="抽獎輪盤">
+          <Wheel
+            participants={participants}
+            rotation={rotation}
+            transition={wheelTransition}
+            winningId={currentWinner}
+            isBusy={isBusy}
+            onStopAnimationEnd={handleStopAnimationEnd}
+          />
+
+          <div className={`result-burst ${currentWinner ? 'show' : ''}`} aria-live="assertive">
+            <span>中獎號碼</span>
+            <strong>{currentWinner ?? '--'}</strong>
+          </div>
+
+          <div className="primary-actions">
+            <button
+              type="button"
+              className={`button draw-button ${phase === 'spinning' ? 'stop' : ''}`}
+              onClick={handlePrimaryAction}
+              disabled={phase === 'stopping'}
+            >
+              {phase === 'spinning' ? '停止抽獎' : phase === 'stopping' ? '開獎中' : '開始抽獎'}
+            </button>
+            <button type="button" className="button fullscreen-button" onClick={toggleFullscreen}>
+              {isFullscreen ? '離開全螢幕' : '全螢幕模式'}
+            </button>
+          </div>
+
+          {notice ? <p className="notice">{notice}</p> : null}
+        </section>
+
+        <aside className="control-panel">
+          <ParticipantEditor
+            value={participantInput}
+            totalCount={participants.length}
+            availableCount={availableParticipants.length}
+            winnerCount={winnerHistory.length}
+            allowRepeat={allowRepeat}
+            disabled={isBusy}
+            onChange={setParticipantInput}
+            onReset={resetParticipants}
+            onToggleAllowRepeat={setAllowRepeat}
+          />
+
+          <WinnerHistory
+            records={winnerHistory}
+            currentWinner={currentWinner}
+            disabled={isBusy}
+            onClear={clearWinnerHistory}
+            onExport={exportWinnerHistory}
+          />
+        </aside>
+      </main>
+
+      <footer className="site-footer">Open Source Project by GuangHouGong</footer>
+    </div>
+  );
+}

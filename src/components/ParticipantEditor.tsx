@@ -1,0 +1,72 @@
+type ParticipantEditorProps = {
+  value: string;
+  totalCount: number;
+  availableCount: number;
+  winnerCount: number;
+  allowRepeat: boolean;
+  disabled: boolean;
+  onChange: (value: string) => void;
+  onReset: () => void;
+  onToggleAllowRepeat: (allowRepeat: boolean) => void;
+};
+
+export default function ParticipantEditor({
+  value,
+  totalCount,
+  availableCount,
+  winnerCount,
+  allowRepeat,
+  disabled,
+  onChange,
+  onReset,
+  onToggleAllowRepeat,
+}: ParticipantEditorProps) {
+  return (
+    <section className="control-section" aria-labelledby="participants-title">
+      <div className="section-heading">
+        <h2 id="participants-title">抽獎名單</h2>
+        <button type="button" className="button button-ghost" onClick={onReset} disabled={disabled}>
+          重設為 1-120
+        </button>
+      </div>
+
+      <div className="stats-grid" aria-label="抽獎統計">
+        <div>
+          <span>總名單</span>
+          <strong>{totalCount}</strong>
+        </div>
+        <div>
+          <span>可抽</span>
+          <strong>{availableCount}</strong>
+        </div>
+        <div>
+          <span>已中獎</span>
+          <strong>{winnerCount}</strong>
+        </div>
+      </div>
+
+      <label className="textarea-label" htmlFor="participant-input">
+        編號輸入
+      </label>
+      <textarea
+        id="participant-input"
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={'1\n2\n3\n或：1, 2, 3'}
+        spellCheck={false}
+      />
+
+      <label className="switch-row">
+        <input
+          type="checkbox"
+          checked={allowRepeat}
+          disabled={disabled}
+          onChange={(event) => onToggleAllowRepeat(event.target.checked)}
+        />
+        <span className="switch" aria-hidden="true" />
+        <span>允許重複中獎</span>
+      </label>
+    </section>
+  );
+}
