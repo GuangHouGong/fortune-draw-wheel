@@ -507,6 +507,43 @@ input:disabled {
   font-weight: 900;
 }
 
+.import-row {
+  display: grid;
+  grid-template-columns: minmax(156px, auto) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 12px;
+}
+
+.file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.import-button {
+  display: inline-grid;
+  place-items: center;
+  min-height: 44px;
+  text-align: center;
+}
+
+.import-button.is-disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+  pointer-events: none;
+}
+
+.import-hint {
+  color: #7b4a28;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
 textarea {
   width: 100%;
   min-height: 190px;
@@ -807,6 +844,10 @@ textarea:focus {
   }
 
   .quick-generate {
+    grid-template-columns: 1fr;
+  }
+
+  .import-row {
     grid-template-columns: 1fr;
   }
 }

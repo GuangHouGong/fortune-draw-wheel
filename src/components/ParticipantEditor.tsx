@@ -1,3 +1,5 @@
+import type { ChangeEvent } from 'react';
+
 type ParticipantEditorProps = {
   value: string;
   totalCount: number;
@@ -9,8 +11,10 @@ type ParticipantEditorProps = {
   isOverLimit: boolean;
   allowRepeat: boolean;
   disabled: boolean;
+  isImporting: boolean;
   onChange: (value: string) => void;
   onReset: () => void;
+  onImportFile: (file: File) => void;
   onQuickCountChange: (count: number) => void;
   onGenerateSequential: () => void;
   onToggleAllowRepeat: (allowRepeat: boolean) => void;
@@ -27,12 +31,23 @@ export default function ParticipantEditor({
   isOverLimit,
   allowRepeat,
   disabled,
+  isImporting,
   onChange,
   onReset,
+  onImportFile,
   onQuickCountChange,
   onGenerateSequential,
   onToggleAllowRepeat,
 }: ParticipantEditorProps) {
+  function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+
+    if (file) {
+      onImportFile(file);
+    }
+  }
+
   return (
     <section className="control-section" aria-labelledby="participants-title">
       <div className="section-heading">
@@ -68,6 +83,24 @@ export default function ParticipantEditor({
         可自行貼上編號或姓名。姓名建議一行一位或逗號分隔；純編號也支援空白分隔。建議 {recommendedCount}{' '}
         人內，最多 {maxCount} 人。
       </p>
+      <div className="import-row">
+        <input
+          id="participant-file"
+          className="file-input"
+          type="file"
+          accept=".xlsx,.xls,.csv,.txt,text/csv,text/plain,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
+          disabled={disabled || isImporting}
+          onChange={handleFileChange}
+        />
+        <label
+          className={`button button-ghost import-button ${disabled || isImporting ? 'is-disabled' : ''}`}
+          htmlFor="participant-file"
+          aria-disabled={disabled || isImporting}
+        >
+          {isImporting ? '匯入中' : '匯入 Excel / CSV'}
+        </label>
+        <span className="import-hint">Excel 讀第一個工作表，優先抓姓名、編號、name 或 id 欄位。</span>
+      </div>
       <textarea
         id="participant-input"
         value={value}

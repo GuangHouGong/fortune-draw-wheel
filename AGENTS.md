@@ -25,6 +25,7 @@ This repository contains the GitHub Pages frontend for `GuangHouGong/fortune-dra
 - Use `crypto.getRandomValues` for draw randomness.
 - The recommended participant count is 100 or fewer; the hard UI limit is 200 participants.
 - Participants can be numeric IDs or real names. Keep names with spaces intact by entering one participant per line or using comma separators.
+- Participant import must stay browser-only. Support `.xlsx`, `.csv`, and `.txt`; read the first `.xlsx` sheet, prefer columns such as `姓名`, `編號`, `name`, or `id`, and otherwise fall back to the first populated column.
 - Preserve the Taiwanese temple event style: red, gold, readable Chinese typography, and projection-friendly sizing.
 - Required public assets live in `public/assets/`.
 

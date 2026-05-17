@@ -12,6 +12,7 @@ import {
   RECOMMENDED_PARTICIPANT_COUNT,
 } from './utils/participants';
 import { downloadCsv, winnerHistoryToCsv, type WinnerRecord } from './utils/csv';
+import { importParticipantsFromFile } from './utils/importParticipants';
 
 const STORAGE_KEYS = {
   participants: 'fortune-draw-wheel:participants',
@@ -58,6 +59,7 @@ export default function App() {
   const [notice, setNotice] = useState('');
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
   const [quickCount, setQuickCount] = useState(RECOMMENDED_PARTICIPANT_COUNT);
+  const [isImporting, setIsImporting] = useState(false);
   const rotationRef = useRef(rotation);
   const pendingWinnerRef = useRef<string | null>(null);
 
@@ -70,6 +72,7 @@ export default function App() {
 
   const isBusy = phase === 'spinning' || phase === 'stopping';
   const isOverParticipantLimit = participants.length > MAX_PARTICIPANT_COUNT;
+  const areControlsDisabled = isBusy || isImporting;
 
   useEffect(() => {
     rotationRef.current = rotation;
@@ -214,6 +217,41 @@ export default function App() {
     setNotice(`已產生 1-${safeCount} 的抽獎名單。`);
   }
 
+  async function importParticipantFile(file: File) {
+    if (isBusy) {
+      return;
+    }
+
+    setIsImporting(true);
+    setNotice(`正在匯入 ${file.name}...`);
+
+    try {
+      const importedParticipants = await importParticipantsFromFile(file);
+
+      if (importedParticipants.length === 0) {
+        setNotice('匯入檔案沒有可用名單。');
+        return;
+      }
+
+      setParticipantInput(participantsToText(importedParticipants));
+      setQuickCount(Math.min(importedParticipants.length, MAX_PARTICIPANT_COUNT));
+      setCurrentWinner(null);
+
+      if (importedParticipants.length > MAX_PARTICIPANT_COUNT) {
+        setNotice(
+          `已匯入 ${importedParticipants.length} 筆；目前最多支援 ${MAX_PARTICIPANT_COUNT} 人，請刪減名單後再抽獎。`,
+        );
+        return;
+      }
+
+      setNotice(`已匯入 ${importedParticipants.length} 筆名單。`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : '匯入失敗，請確認檔案格式。');
+    } finally {
+      setIsImporting(false);
+    }
+  }
+
   function clearWinnerHistory() {
     const confirmed = window.confirm('確定清除全部中獎紀錄？');
     if (!confirmed) {
@@ -285,7 +323,7 @@ export default function App() {
               type="button"
               className={`button draw-button ${phase === 'spinning' ? 'stop' : ''}`}
               onClick={handlePrimaryAction}
-              disabled={phase === 'stopping'}
+              disabled={phase === 'stopping' || isImporting}
             >
               {phase === 'spinning' ? '停止抽獎' : phase === 'stopping' ? '開獎中' : '開始抽獎'}
             </button>
@@ -308,9 +346,11 @@ export default function App() {
             quickCount={quickCount}
             isOverLimit={isOverParticipantLimit}
             allowRepeat={allowRepeat}
-            disabled={isBusy}
+            disabled={areControlsDisabled}
+            isImporting={isImporting}
             onChange={setParticipantInput}
             onReset={resetParticipants}
+            onImportFile={importParticipantFile}
             onQuickCountChange={setQuickCount}
             onGenerateSequential={generateSequentialParticipants}
             onToggleAllowRepeat={setAllowRepeat}
