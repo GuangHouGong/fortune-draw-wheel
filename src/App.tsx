@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import FirstRunGuide from './components/FirstRunGuide';
 import ParticipantEditor from './components/ParticipantEditor';
 import Wheel from './components/Wheel';
 import WinnerHistory from './components/WinnerHistory';
@@ -18,6 +19,7 @@ const STORAGE_KEYS = {
   participants: 'fortune-draw-wheel:participants',
   winners: 'fortune-draw-wheel:winners',
   allowRepeat: 'fortune-draw-wheel:allow-repeat',
+  guideSeen: 'fortune-draw-wheel:first-run-guide-seen',
 } as const;
 
 type DrawPhase = 'idle' | 'spinning' | 'stopping';
@@ -60,6 +62,9 @@ export default function App() {
   const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
   const [quickCount, setQuickCount] = useState(RECOMMENDED_PARTICIPANT_COUNT);
   const [isImporting, setIsImporting] = useState(false);
+  const [isGuideOpen, setIsGuideOpen] = useState(() => {
+    return localStorage.getItem(STORAGE_KEYS.guideSeen) !== 'true';
+  });
   const rotationRef = useRef(rotation);
   const pendingWinnerRef = useRef<string | null>(null);
 
@@ -280,6 +285,11 @@ export default function App() {
     }
   }
 
+  function closeGuide() {
+    localStorage.setItem(STORAGE_KEYS.guideSeen, 'true');
+    setIsGuideOpen(false);
+  }
+
   return (
     <div className={`app-shell ${isFullscreen ? 'is-fullscreen' : ''}`}>
       <header className="temple-header">
@@ -289,6 +299,9 @@ export default function App() {
         <div className="brand-title">
           <p>土城廣厚宮</p>
           <h1>福德正神・玄壇財神抽獎輪盤</h1>
+          <button type="button" className="guide-open-button" onClick={() => setIsGuideOpen(true)}>
+            使用說明
+          </button>
         </div>
         <img
           className="mascot-image"
@@ -366,6 +379,7 @@ export default function App() {
         </aside>
       </main>
 
+      <FirstRunGuide open={isGuideOpen} onClose={closeGuide} />
     </div>
   );
 }

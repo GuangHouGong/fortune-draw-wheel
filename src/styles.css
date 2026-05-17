@@ -106,6 +106,22 @@ input:disabled {
     0 10px 30px rgba(45, 0, 0, 0.35);
 }
 
+.guide-open-button {
+  margin-top: 12px;
+  min-height: 38px;
+  border: 2px solid rgba(255, 244, 183, 0.68);
+  border-radius: 999px;
+  padding: 7px 16px;
+  background: rgba(255, 248, 207, 0.92);
+  color: #8a0f16;
+  font-weight: 950;
+  box-shadow: 0 8px 18px rgba(69, 0, 0, 0.16);
+}
+
+.guide-open-button:hover {
+  filter: brightness(1.04);
+}
+
 .mascot-image {
   width: clamp(86px, 12vw, 174px);
   aspect-ratio: 1;
@@ -717,6 +733,178 @@ textarea:focus {
   text-align: center;
 }
 
+.guide-overlay {
+  position: fixed;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background:
+    radial-gradient(circle at 50% 32%, rgba(255, 222, 96, 0.22), transparent 24rem),
+    rgba(74, 0, 0, 0.68);
+  backdrop-filter: blur(6px);
+}
+
+.guide-dialog {
+  width: min(760px, 100%);
+  max-height: min(86vh, 760px);
+  overflow: auto;
+  border: 4px solid #f3c54b;
+  border-radius: 16px;
+  padding: clamp(20px, 3vw, 30px);
+  background:
+    linear-gradient(180deg, rgba(255, 250, 224, 0.99), rgba(255, 234, 167, 0.99)),
+    #fff0b4;
+  color: #4a1908;
+  box-shadow: 0 28px 68px rgba(45, 0, 0, 0.38);
+}
+
+.guide-header {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.guide-mark {
+  width: clamp(58px, 10vw, 82px);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  border: 5px solid #fff3ad;
+  background: radial-gradient(circle at 35% 28%, #fff9ca 0%, #f2bc28 54%, #a35b00 100%);
+  color: #b10f18;
+  font-family: serif;
+  font-size: clamp(2.3rem, 6vw, 4rem);
+  font-weight: 950;
+  line-height: 1;
+  text-shadow: 0 2px 0 #fff2b3;
+}
+
+.guide-header p,
+.guide-header h2 {
+  margin: 0;
+}
+
+.guide-header p {
+  color: #9b0e18;
+  font-size: 1.05rem;
+  font-weight: 950;
+}
+
+.guide-header h2 {
+  color: #72100f;
+  font-size: clamp(1.85rem, 5vw, 3.1rem);
+  line-height: 1.05;
+  font-weight: 950;
+}
+
+.guide-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.guide-steps li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 13px 0;
+  border-top: 1px solid rgba(129, 31, 9, 0.15);
+}
+
+.guide-steps li:first-child {
+  border-top: 0;
+}
+
+.guide-steps li > span {
+  width: 36px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #a80f19;
+  color: #fff8cc;
+  font-weight: 950;
+}
+
+.guide-steps strong {
+  display: block;
+  color: #841118;
+  font-size: 1.18rem;
+  font-weight: 950;
+}
+
+.guide-steps p {
+  margin: 4px 0 0;
+  color: #67311a;
+  font-size: 1.02rem;
+  font-weight: 760;
+}
+
+.guide-format {
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 12px;
+  background: #fff8d4;
+  border: 1px solid rgba(138, 15, 22, 0.16);
+}
+
+.guide-format strong {
+  display: block;
+  margin-bottom: 9px;
+  color: #7a1116;
+  font-weight: 950;
+}
+
+.guide-format div {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border: 1px solid rgba(126, 13, 22, 0.18);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fffef4;
+}
+
+.guide-format span {
+  min-width: 0;
+  padding: 9px 10px;
+  border-top: 1px solid rgba(126, 13, 22, 0.12);
+  color: #4a1908;
+  font-weight: 850;
+}
+
+.guide-format span:nth-child(-n + 2) {
+  border-top: 0;
+  background: #8f0d15;
+  color: #fff5bf;
+  font-weight: 950;
+}
+
+.guide-format span:nth-child(odd) {
+  border-right: 1px solid rgba(126, 13, 22, 0.12);
+}
+
+.guide-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.guide-primary {
+  min-height: 56px;
+  border-radius: 12px;
+  color: #fff9da;
+  background: linear-gradient(180deg, #ffe772 0%, #e9a719 52%, #bd3812 100%);
+  text-shadow: 0 2px 0 #741004;
+}
+
 .is-fullscreen {
   min-height: 100vh;
 }
@@ -821,6 +1009,10 @@ textarea:focus {
   .history-list time {
     grid-column: 1 / -1;
   }
+
+  .guide-dialog {
+    max-height: calc(100vh - 24px);
+  }
 }
 
 @media (max-width: 460px) {
@@ -849,6 +1041,19 @@ textarea:focus {
 
   .import-row {
     grid-template-columns: 1fr;
+  }
+
+  .guide-overlay {
+    padding: 10px;
+  }
+
+  .guide-dialog {
+    border-width: 3px;
+    border-radius: 12px;
+  }
+
+  .guide-actions {
+    display: grid;
   }
 }
 
