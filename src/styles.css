@@ -733,6 +733,39 @@ textarea:focus {
   text-align: center;
 }
 
+.memory-state {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  padding: 6px 10px;
+  background: #e3c390;
+  color: #6b2a12;
+  font-size: 0.88rem;
+  font-weight: 950;
+}
+
+.memory-state.is-saved {
+  background: #8f0d15;
+  color: #fff5bf;
+}
+
+.memory-time {
+  margin: 0 0 12px;
+  color: #7b4a28;
+  font-size: 0.95rem;
+  font-weight: 850;
+}
+
+.memory-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.memory-actions .button {
+  min-width: 0;
+  width: 100%;
+}
+
 .guide-overlay {
   position: fixed;
   z-index: 50;
@@ -996,6 +1029,10 @@ textarea:focus {
 
   .history-actions {
     justify-content: stretch;
+  }
+
+  .memory-actions {
+    grid-template-columns: 1fr;
   }
 
   .history-actions .button {

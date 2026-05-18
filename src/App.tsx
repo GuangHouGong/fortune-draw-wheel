@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import BrowserMemoryPanel from './components/BrowserMemoryPanel';
 import FirstRunGuide from './components/FirstRunGuide';
 import ParticipantEditor from './components/ParticipantEditor';
 import Wheel from './components/Wheel';
@@ -14,6 +15,12 @@ import {
 } from './utils/participants';
 import { downloadCsv, winnerHistoryToCsv, type WinnerRecord } from './utils/csv';
 import { importParticipantsFromFile } from './utils/importParticipants';
+import {
+  clearBrowserMemorySnapshot,
+  readBrowserMemorySnapshot,
+  saveBrowserMemorySnapshot,
+  type BrowserMemorySnapshot,
+} from './utils/browserMemory';
 
 const STORAGE_KEYS = {
   participants: 'fortune-draw-wheel:participants',
@@ -65,6 +72,9 @@ export default function App() {
   const [isGuideOpen, setIsGuideOpen] = useState(() => {
     return localStorage.getItem(STORAGE_KEYS.guideSeen) !== 'true';
   });
+  const [browserMemory, setBrowserMemory] = useState<BrowserMemorySnapshot | null>(
+    readBrowserMemorySnapshot,
+  );
   const rotationRef = useRef(rotation);
   const pendingWinnerRef = useRef<string | null>(null);
 
@@ -268,6 +278,57 @@ export default function App() {
     setNotice('中獎紀錄已清除。');
   }
 
+  function saveBrowserMemory() {
+    const snapshot: BrowserMemorySnapshot = {
+      participantsText: participantInput,
+      winnerHistory,
+      allowRepeat,
+      savedAt: new Date().toISOString(),
+    };
+
+    saveBrowserMemorySnapshot(snapshot);
+    setBrowserMemory(snapshot);
+    setNotice('已記住目前抽獎資料。');
+  }
+
+  function restoreBrowserMemory() {
+    if (!browserMemory) {
+      setNotice('尚未建立瀏覽器記憶。');
+      return;
+    }
+
+    const confirmed = window.confirm('還原瀏覽器記憶會覆蓋目前名單與中獎紀錄，確定要還原？');
+
+    if (!confirmed) {
+      return;
+    }
+
+    const restoredParticipants = parseParticipants(browserMemory.participantsText);
+    setParticipantInput(browserMemory.participantsText);
+    setWinnerHistory(browserMemory.winnerHistory);
+    setAllowRepeat(browserMemory.allowRepeat);
+    setCurrentWinner(null);
+    setQuickCount(
+      Math.min(
+        Math.max(restoredParticipants.length || RECOMMENDED_PARTICIPANT_COUNT, 1),
+        MAX_PARTICIPANT_COUNT,
+      ),
+    );
+    setNotice('已還原瀏覽器記憶。');
+  }
+
+  function clearBrowserMemory() {
+    const confirmed = window.confirm('確定清除這份瀏覽器記憶？目前畫面資料不會被清除。');
+
+    if (!confirmed) {
+      return;
+    }
+
+    clearBrowserMemorySnapshot();
+    setBrowserMemory(null);
+    setNotice('瀏覽器記憶已清除。');
+  }
+
   function exportWinnerHistory() {
     const chronologicalRecords = [...winnerHistory].reverse();
     downloadCsv(createCsvFilename(), winnerHistoryToCsv(chronologicalRecords));
@@ -366,6 +427,14 @@ export default function App() {
             onQuickCountChange={setQuickCount}
             onGenerateSequential={generateSequentialParticipants}
             onToggleAllowRepeat={setAllowRepeat}
+          />
+
+          <BrowserMemoryPanel
+            savedAt={browserMemory?.savedAt ?? null}
+            disabled={areControlsDisabled}
+            onSave={saveBrowserMemory}
+            onRestore={restoreBrowserMemory}
+            onClear={clearBrowserMemory}
           />
 
           <WinnerHistory
