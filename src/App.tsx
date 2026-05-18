@@ -297,7 +297,7 @@ export default function App() {
           <img src={`${import.meta.env.BASE_URL}assets/logo.svg`} alt="" />
         </div>
         <div className="brand-title">
-          <h1>土地公功德會抽獎</h1>
+          <h1>土城廣厚宮功德會抽獎</h1>
           <button type="button" className="guide-open-button" onClick={() => setIsGuideOpen(true)}>
             使用說明
           </button>
@@ -305,7 +305,7 @@ export default function App() {
         <img
           className="mascot-image"
           src={`${import.meta.env.BASE_URL}assets/guanghougong-mascot.png`}
-          alt="土地公功德會抽獎主視覺"
+          alt="土城廣厚宮功德會抽獎主視覺"
         />
       </header>
 

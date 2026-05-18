@@ -1,8 +1,8 @@
-# 土地公功德會抽獎
+# 土城廣厚宮功德會抽獎
 
-![土地公功德會抽獎](public/assets/og-image.svg)
+![土城廣厚宮功德會抽獎](public/assets/og-image.svg)
 
-土地公功德會抽獎是一個純前端 Web App，為宮廟活動、現場投影與公開抽獎流程設計。專案使用 Vite、React、TypeScript 建置，不需要後端、不需要資料庫，可以直接部署到 GitHub Pages。
+土城廣厚宮功德會抽獎是一個純前端 Web App，為宮廟活動、現場投影與公開抽獎流程設計。專案使用 Vite、React、TypeScript 建置，不需要後端、不需要資料庫，可以直接部署到 GitHub Pages。
 
 ## 快速資訊
 
