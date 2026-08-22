@@ -6,6 +6,7 @@ export type BrowserMemorySnapshot = {
   participantsText: string;
   winnerHistory: WinnerRecord[];
   allowRepeat: boolean;
+  autoStop: boolean;
   savedAt: string;
 };
 
@@ -46,6 +47,7 @@ export function readBrowserMemorySnapshot(): BrowserMemorySnapshot | null {
       participantsText: parsed.participantsText,
       winnerHistory: parsed.winnerHistory,
       allowRepeat: parsed.allowRepeat,
+      autoStop: typeof parsed.autoStop === 'boolean' ? parsed.autoStop : true,
       savedAt: parsed.savedAt,
     };
   } catch {

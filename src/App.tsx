@@ -26,10 +26,13 @@ const STORAGE_KEYS = {
   participants: 'fortune-draw-wheel:participants',
   winners: 'fortune-draw-wheel:winners',
   allowRepeat: 'fortune-draw-wheel:allow-repeat',
+  autoStop: 'fortune-draw-wheel:auto-stop',
   guideSeen: 'fortune-draw-wheel:first-run-guide-seen',
 } as const;
 
 type DrawPhase = 'idle' | 'spinning' | 'stopping';
+
+const AUTO_STOP_DELAY_MS = 4000;
 
 function readStoredWinners(): WinnerRecord[] {
   try {
@@ -61,6 +64,7 @@ export default function App() {
   });
   const [winnerHistory, setWinnerHistory] = useState<WinnerRecord[]>(readStoredWinners);
   const [allowRepeat, setAllowRepeat] = useState(() => localStorage.getItem(STORAGE_KEYS.allowRepeat) === 'true');
+  const [autoStop, setAutoStop] = useState(() => localStorage.getItem(STORAGE_KEYS.autoStop) !== 'false');
   const [phase, setPhase] = useState<DrawPhase>('idle');
   const [rotation, setRotation] = useState(0);
   const [wheelTransition, setWheelTransition] = useState('none');
@@ -77,6 +81,7 @@ export default function App() {
   );
   const rotationRef = useRef(rotation);
   const pendingWinnerRef = useRef<string | null>(null);
+  const autoStopTimerRef = useRef<number | null>(null);
 
   const participants = useMemo(() => parseParticipants(participantInput), [participantInput]);
   const winnerIds = useMemo(() => winnerHistory.map((record) => record.id), [winnerHistory]);
@@ -104,6 +109,18 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.allowRepeat, String(allowRepeat));
   }, [allowRepeat]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.autoStop, String(autoStop));
+  }, [autoStop]);
+
+  useEffect(() => {
+    return () => {
+      if (autoStopTimerRef.current !== null) {
+        window.clearTimeout(autoStopTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     function handleFullscreenChange() {
@@ -154,9 +171,21 @@ export default function App() {
     setNotice('');
     pendingWinnerRef.current = null;
     setPhase('spinning');
+
+    if (autoStop) {
+      autoStopTimerRef.current = window.setTimeout(() => {
+        autoStopTimerRef.current = null;
+        stopDraw();
+      }, AUTO_STOP_DELAY_MS);
+    }
   }
 
   function stopDraw() {
+    if (autoStopTimerRef.current !== null) {
+      window.clearTimeout(autoStopTimerRef.current);
+      autoStopTimerRef.current = null;
+    }
+
     if (availableParticipants.length === 0) {
       setNotice('剩餘可抽名單為空，請清除中獎紀錄或開啟重複中獎。');
       setPhase('idle');
@@ -194,7 +223,7 @@ export default function App() {
       return;
     }
 
-    if (phase === 'spinning') {
+    if (phase === 'spinning' && !autoStop) {
       stopDraw();
     }
   }
@@ -283,6 +312,7 @@ export default function App() {
       participantsText: participantInput,
       winnerHistory,
       allowRepeat,
+      autoStop,
       savedAt: new Date().toISOString(),
     };
 
@@ -307,6 +337,7 @@ export default function App() {
     setParticipantInput(browserMemory.participantsText);
     setWinnerHistory(browserMemory.winnerHistory);
     setAllowRepeat(browserMemory.allowRepeat);
+    setAutoStop(browserMemory.autoStop);
     setCurrentWinner(null);
     setQuickCount(
       Math.min(
@@ -396,14 +427,50 @@ export default function App() {
               type="button"
               className={`button draw-button ${phase === 'spinning' ? 'stop' : ''}`}
               onClick={handlePrimaryAction}
-              disabled={phase === 'stopping' || isImporting}
+              disabled={phase === 'stopping' || isImporting || (phase === 'spinning' && autoStop)}
             >
-              {phase === 'spinning' ? '停止抽獎' : phase === 'stopping' ? '開獎中' : '開始抽獎'}
+              {phase === 'spinning'
+                ? autoStop
+                  ? '系統自動停止中'
+                  : '停止抽獎'
+                : phase === 'stopping'
+                  ? '開獎中'
+                  : '開始抽獎'}
             </button>
             <button type="button" className="button fullscreen-button" onClick={toggleFullscreen}>
               {isFullscreen ? '離開全螢幕' : '全螢幕模式'}
             </button>
           </div>
+
+          <fieldset className="draw-mode" disabled={isBusy || isImporting}>
+            <legend>停止方式</legend>
+            <div className="draw-mode-options">
+              <label className={`draw-mode-option ${autoStop ? 'is-selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="draw-stop-mode"
+                  checked={autoStop}
+                  onChange={() => setAutoStop(true)}
+                />
+                <span className="draw-mode-copy">
+                  <strong>自動停止</strong>
+                  <small>開始後約 4 秒自動開獎</small>
+                </span>
+              </label>
+              <label className={`draw-mode-option ${autoStop ? '' : 'is-selected'}`}>
+                <input
+                  type="radio"
+                  name="draw-stop-mode"
+                  checked={!autoStop}
+                  onChange={() => setAutoStop(false)}
+                />
+                <span className="draw-mode-copy">
+                  <strong>手動停止</strong>
+                  <small>再次按「停止抽獎」才開獎</small>
+                </span>
+              </label>
+            </div>
+          </fieldset>
 
           {notice ? <p className="notice">{notice}</p> : null}
         </section>

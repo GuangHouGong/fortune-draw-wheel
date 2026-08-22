@@ -358,6 +358,87 @@ input:disabled {
   gap: 12px;
 }
 
+.draw-mode {
+  width: min(620px, 100%);
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.draw-mode legend {
+  margin-bottom: 8px;
+  padding: 0;
+  color: #fff1ba;
+  font-size: 1rem;
+  font-weight: 900;
+  text-shadow: 0 2px 0 rgba(94, 8, 8, 0.48);
+}
+
+.draw-mode-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.draw-mode-option {
+  position: relative;
+  display: block;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.draw-mode-option input {
+  position: absolute;
+  opacity: 0;
+}
+
+.draw-mode-copy {
+  display: grid;
+  gap: 3px;
+  min-height: 66px;
+  padding: 10px 13px;
+  border: 2px solid rgba(255, 232, 153, 0.68);
+  border-radius: 12px;
+  background: rgba(109, 11, 15, 0.66);
+  color: #fff8d7;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  transition:
+    background 160ms ease,
+    border-color 160ms ease,
+    transform 160ms ease;
+}
+
+.draw-mode-copy strong {
+  font-size: 1.08rem;
+  font-weight: 950;
+}
+
+.draw-mode-copy small {
+  color: #ffe6a8;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.draw-mode-option.is-selected .draw-mode-copy {
+  border-color: #fff0a8;
+  background: linear-gradient(135deg, #a50d16, #d12b1b);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    0 5px 0 rgba(76, 6, 10, 0.5);
+  transform: translateY(-2px);
+}
+
+.draw-mode-option input:focus-visible + .draw-mode-copy {
+  outline: 3px solid #fff4ae;
+  outline-offset: 3px;
+}
+
+.draw-mode:disabled .draw-mode-option {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
 .button {
   border: 0;
   border-radius: 10px;
@@ -1019,6 +1100,10 @@ textarea:focus {
   }
 
   .primary-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .draw-mode-options {
     grid-template-columns: 1fr;
   }
 

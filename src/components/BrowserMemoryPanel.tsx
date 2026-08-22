@@ -37,7 +37,7 @@ export default function BrowserMemoryPanel({
         </span>
       </div>
 
-      <p className="field-hint">把目前名單、重複中獎設定與中獎紀錄記在這台瀏覽器。</p>
+      <p className="field-hint">把目前名單、重複中獎與停止方式設定、中獎紀錄記在這台瀏覽器。</p>
       <p className="memory-time">
         {savedAt ? `上次記住：${formatSavedAt(savedAt)}` : '尚未建立瀏覽器記憶。'}
       </p>
