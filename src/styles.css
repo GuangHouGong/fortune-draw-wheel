@@ -14,3 +14,47 @@
 @media(min-width:761px){.draw-workspace{padding-bottom:120px}.draw-action-bar{position:fixed;z-index:40;bottom:0;left:0;right:0;padding:12px max(24px,calc((100vw - 900px)/2));background:var(--paper);border-top:1px solid var(--gold);box-shadow:0 -6px 20px #5c0b1117}.projection-mode .draw-action-bar{max-width:none;margin:0;padding-inline:max(24px,calc((100vw - 650px)/2))}.stage-visual{width:min(100%,52dvh,500px)}}
 .system-status button{min-height:44px}
 p{overflow-wrap:anywhere}.stage-heading>div,.activity-entry-heading>div{min-width:0;overflow-wrap:anywhere}.batch-results>span{max-width:100%;min-width:0;overflow-wrap:anywhere}
+
+/* The activity entrance keeps tasks ahead of decoration at every size. */
+.activities-workspace { gap: 24px; }
+.activity-hero { min-height: 0; padding: 18px 32px 24px; gap: 24px; }
+.activity-hero-copy { min-width: 0; }
+.activity-hero h1 { font-size: clamp(1.9rem, calc(4vw * var(--draw-font-scale, 1)), 3rem); margin: 10px 0 14px; }
+.activity-hero-description { font-size: 1rem; }
+.activity-hero img { width: clamp(180px, 22vw, 270px); height: auto; flex-shrink: 0; }
+.activity-hero-links { display: flex; flex-wrap: wrap; gap: 4px 20px; }
+.activity-hero-links .text-link { display: inline-flex; align-items: center; min-height: 44px; margin-top: 8px; font-size: .95rem; }
+.create-activity .button-primary { min-height: 56px; }
+.home-import { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 12px; padding-top: 16px; border-top: 1px solid #D9A44166; }
+.home-import p { flex: 1; min-width: 0; margin: 0; }
+#my-activities { scroll-margin-top: 100px; }
+#my-activities > .section-heading { padding: 14px 18px; border-top: 3px solid var(--gold); border-radius: 8px; background: var(--paper); flex-wrap: wrap; gap: 12px; }
+.activity-entry .button-primary { min-height: 56px; }
+.activity-entry-heading > div { flex: 1; min-width: 0; }
+.activity-entry-heading .badge { flex-shrink: 0; white-space: nowrap; }
+@media screen and (min-width: 1000px) {
+  .activity-list { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+}
+@media screen and (min-width: 761px) and (max-width: 1000px) {
+  .activity-hero { padding: 16px 12px; }
+  .activity-hero img { width: 210px; }
+}
+@media screen and (max-width: 760px) {
+  .button.header-button { padding: 7px 9px; }
+  .activity-hero { display: grid; grid-template-columns: minmax(0, 1fr) min(27%, 112px); gap: 10px 14px; padding: 12px 14px 18px; align-items: center; }
+  .activity-hero-copy { display: contents; }
+  .activity-hero > div > p:first-child { grid-column: 1 / -1; grid-row: 1; font-size: .9rem; margin: 0; }
+  .activity-hero h1 { grid-column: 1 / -1; grid-row: 2; font-size: clamp(1.7rem, calc(8.5vw * var(--draw-font-scale, 1)), 2.2rem); margin: 0; }
+  .activity-hero-description { grid-column: 1; grid-row: 3; font-size: 1rem; margin: 0; }
+  .activity-hero-links { grid-column: 1; grid-row: 4; gap: 2px; }
+  .activity-hero-links .text-link { font-size: .95rem; margin: 0; }
+  .activity-hero img { grid-column: 2; grid-row: 3 / 5; width: 100%; max-width: none; margin: 0; align-self: center; }
+  .home-import { display: grid; }
+  .home-import .button { width: 100%; }
+  .activity-entry .button-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: stretch; }
+  .activity-entry .button-row > .button-primary { grid-column: 1 / -1; min-height: 56px; font-size: 1rem; }
+  .activity-entry .button-row > .button { width: 100%; }
+  .activity-entry.archived .button-row > :last-child { grid-column: 1 / -1; }
+  .backup-footer > div { min-width: 0; flex-basis: 100%; }
+  .backup-footer > .button { width: 100%; min-height: 56px; }
+}
