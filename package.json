@@ -1,15 +1,16 @@
 {
   "name": "fortune-draw-wheel",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "license": "MIT",
   "author": "Clarence (https://github.com/clarencetw)",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && node scripts/verify-build.mjs",
     "preview": "vite preview",
-    "lint": "eslint . --max-warnings=0"
+    "lint": "eslint . --max-warnings=0",
+    "test": "vitest run"
   },
   "dependencies": {
     "@vitejs/plugin-react": "latest",
@@ -19,6 +20,7 @@
   },
   "devDependencies": {
     "@eslint/js": "latest",
+    "@types/node": "24.19.1",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "eslint": "latest",
@@ -27,6 +29,9 @@
     "globals": "latest",
     "typescript": "latest",
     "typescript-eslint": "latest",
-    "vite": "latest"
+    "vite": "latest",
+    "vite-plugin-pwa": "2.0.0",
+    "vitest": "5.0.3",
+    "workbox-window": "7.4.1"
   }
 }

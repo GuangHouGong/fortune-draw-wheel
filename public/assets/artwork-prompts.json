@@ -1,0 +1,42 @@
+{
+  "generator": "ChatGPT built-in imagegen",
+  "reference": "guanghougong-mascot.png",
+  "postprocessing": "Non-semantic resizing to 1024 square for cutouts; WebP compression preserves alpha. PWA icons are rasterized from the existing logo.svg.",
+  "prompts": [
+    {
+      "asset": "mascot-welcome.webp",
+      "transparent": true,
+      "prompt": "Use case: stylized-concept. Asset type: a single production web mascot cutout, 1024 by 1024. Reference image role: character identity only, not the background or lettering. Reimagine the same warm Taiwanese temple fortune deity as a premium friendly 3D ceramic collectible: plump elderly smiling face, rosy cheeks, soft white moustache and beard, gold winged traditional hat with an emerald jewel, ochre-gold robe with red trim, dark rounded shoes. Preserve this identity and consistent proportions. Full body centered with generous transparent margin, front three-quarter facing camera, soft studio lighting, satin gold material, clearly readable silhouette. Genuinely transparent alpha background, no backdrop, no ground plane, no typography, no lettering, no logo, no watermark. Keep every body part and held object fully within the canvas. Pose: welcoming visitors with one raised hand waving and the other holding a small smooth gold ingot with no writing. Gentle delighted smile and calm open eyes. This is the welcome state."
+    },
+    {
+      "asset": "mascot-cheer.webp",
+      "transparent": true,
+      "prompt": "Use case: stylized-concept. Asset type: a single production web mascot cutout, 1024 by 1024. Reference image role: character identity only, not the background or lettering. Reimagine the same warm Taiwanese temple fortune deity as a premium friendly 3D ceramic collectible: plump elderly smiling face, rosy cheeks, soft white moustache and beard, gold winged traditional hat with an emerald jewel, ochre-gold robe with red trim, dark rounded shoes. Preserve this identity and consistent proportions. Full body centered with generous transparent margin, front three-quarter facing camera, soft studio lighting, satin gold material, clearly readable silhouette. Genuinely transparent alpha background, no backdrop, no ground plane, no typography, no lettering, no logo, no watermark. Keep every body part and held object fully within the canvas. Pose: cheering on the draw, both hands making playful encouraging fists close to the chest, an excited encouraging smile with open eyes, a small joyful lean forward. No separate objects or sparkles. This is the cheering state."
+    },
+    {
+      "asset": "mascot-celebrate.webp",
+      "transparent": true,
+      "prompt": "Use case: stylized-concept. Asset type: a single production web mascot cutout, 1024 by 1024. Reference image role: character identity only, not the background or lettering. Reimagine the same warm Taiwanese temple fortune deity as a premium friendly 3D ceramic collectible: plump elderly smiling face, rosy cheeks, soft white moustache and beard, gold winged traditional hat with an emerald jewel, ochre-gold robe with red trim, dark rounded shoes. Preserve this identity and consistent proportions. Full body centered with generous transparent margin, front three-quarter facing camera, soft studio lighting, satin gold material, clearly readable silhouette. Genuinely transparent alpha background, no backdrop, no ground plane, no typography, no lettering, no logo, no watermark. Keep every body part and held object fully within the canvas. Pose: celebrating a winner, both hands raise one beautiful large smooth golden ingot above chest height, joyful broad smile with happy squinting eyes. Subtle few gold star ornaments close to the character, all fully within canvas. No writing on ingot. This is the congratulations state."
+    },
+    {
+      "asset": "temple-desktop.webp",
+      "transparent": false,
+      "prompt": "Use case: stylized-concept. Asset type: desktop website backdrop, 1536 by 1024 landscape. A tasteful Taiwanese temple festival drawing stage in premium softly rendered 3D illustration. Burgundy lacquer red, warm aged gold, lanterns and restrained auspicious cloud relief ornament, symmetrical generic curved temple roof silhouettes along the upper corners, subtle satin red stage fabric. The center 70 percent of the image must be very clean quiet deep burgundy with only a soft warm ambient glow, to place a large prize wheel and clear text in front. Ornament confined to edges; low-contrast backdrop, no busy detail behind the central working area. Gentle depth and tactile materials, ceremonial and friendly, readable for older participants. Generic fictional temple design, do not depict or claim a real building. No deity or people, no mascots, no text, no Chinese characters, no logos, no watermark."
+    },
+    {
+      "asset": "temple-mobile.webp",
+      "transparent": false,
+      "prompt": "Use case: stylized-concept. Asset type: mobile website backdrop, 1024 by 1536 portrait. A tasteful Taiwanese temple festival drawing stage in premium softly rendered 3D illustration. Burgundy lacquer red and warm aged gold matching the desktop version. Generic curved temple roof silhouettes at the very top corners, two small warm red lanterns near the upper edges, restrained auspicious cloud relief confined to border, satin red stage fabric. Keep central 80 percent and lower two thirds as clean quiet deep burgundy negative space for a prize wheel and large controls, subtle soft ambient lighting. Ceremonial friendly tactile materials; no busy patterns behind central content. Generic fictional temple design, do not depict or claim a real building. No deity, people or mascot, no text, no Chinese characters, no logos or watermark."
+    },
+    {
+      "asset": "wheel-frame.png",
+      "transparent": true,
+      "prompt": "Use case: stylized-concept. Asset type: production prize-wheel decorative frame overlay, square 1024 by 1024. Exactly straight-on front view of one perfectly circular gold ceremonial ring, centered, not tilted or elliptical. Ring outer diameter approximately 94 percent of canvas, ring thickness 8 percent of diameter, completely open center, genuinely transparent center and exterior. Premium 3D gilded carved auspicious cloud scrolls, subtle coin-inspired blessing ornament without lettering, restrained symmetric detail in warm gold with red enamel accents, soft even studio lighting. A small understated ornamental crest at the very top only, NOT a pointer. Must work around a dynamically generated SVG spinning wheel; no spokes, no wheel wedges, no labels, no text, no Chinese characters, no objects inside the hole, no drop-shadow filling the hole, no background, no watermark."
+    },
+    {
+      "asset": "wheel-center.png",
+      "transparent": true,
+      "prompt": "Use case: stylized-concept. Asset type: production prize-wheel central hub overlay, square 1024 by 1024. One glossy warm gold Chinese sycee ingot with small red enamel base accent, centered and viewed from slightly above and front, large clean recognizable silhouette, friendly premium 3D ceramic collectible material matching a Taiwanese temple festival mascot. Isolated genuinely transparent alpha background, soft even studio lighting, no ground plane. Occupy about 75 percent width, enough padding all around. Smooth decorative ingot, no writing or characters or logos, no extra objects, no sparkles outside, no watermark."
+    }
+  ]
+}

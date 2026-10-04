@@ -1,520 +1,112 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import BrowserMemoryPanel from './components/BrowserMemoryPanel';
-import FirstRunGuide from './components/FirstRunGuide';
-import ParticipantEditor from './components/ParticipantEditor';
-import Wheel from './components/Wheel';
-import WinnerHistory from './components/WinnerHistory';
-import {
-  createDefaultParticipants,
-  getAvailableParticipants,
-  MAX_PARTICIPANT_COUNT,
-  parseParticipants,
-  participantsToText,
-  randomIndex,
-  RECOMMENDED_PARTICIPANT_COUNT,
-} from './utils/participants';
-import { downloadCsv, winnerHistoryToCsv, type WinnerRecord } from './utils/csv';
-import { importParticipantsFromFile } from './utils/importParticipants';
-import {
-  clearBrowserMemorySnapshot,
-  readBrowserMemorySnapshot,
-  saveBrowserMemorySnapshot,
-  type BrowserMemorySnapshot,
-} from './utils/browserMemory';
+import { useEffect, useRef, useState } from 'react';
+import type { Activity, AppData, DrawRecord, PendingDraw, Preferences } from './types';
+import { createActivity, duplicateActivity, assertActivityEditable } from './utils/models';
+import { readAppData, transaction, subscribeStore, claimDrawOwner, restoreFromBackup, downloadRawRecovery } from './utils/store';
+import { beginDraw, revealNext, markRecord } from './utils/drawEngine';
+import { downloadBackup, importBackup } from './utils/backup';
+import ActivitySetup from './components/ActivitySetup';
+import DrawStage from './components/DrawStage';
+import ActivityResults from './components/ActivityResults';
+import HelpPage from './components/HelpPage';
+import OfflineStatus from './components/OfflineStatus';
 
-const STORAGE_KEYS = {
-  participants: 'fortune-draw-wheel:participants',
-  winners: 'fortune-draw-wheel:winners',
-  allowRepeat: 'fortune-draw-wheel:allow-repeat',
-  autoStop: 'fortune-draw-wheel:auto-stop',
-  guideSeen: 'fortune-draw-wheel:first-run-guide-seen',
-} as const;
-
-type DrawPhase = 'idle' | 'spinning' | 'stopping';
-
-const AUTO_STOP_DELAY_MS = 4000;
-
-function readStoredWinners(): WinnerRecord[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.winners);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed = JSON.parse(raw) as WinnerRecord[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
+type Page = 'activities' | 'prepare' | 'draw' | 'results' | 'help';
+function route() {
+  const parts = location.hash.replace(/^#\/?/, '').split('?')[0].split('/');
+  if (parts[0] === 'activity' && parts[1]) return { page: (['prepare', 'draw', 'results'].includes(parts[2]) ? parts[2] : 'prepare') as Page, id: parts[1] };
+  return { page: parts[0] === 'help' ? 'help' as Page : 'activities' as Page, id: null };
 }
-
-function normalizeDegrees(degrees: number): number {
-  return ((degrees % 360) + 360) % 360;
-}
-
-function createCsvFilename(): string {
-  const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  return `fortune-draw-winners-${date}.csv`;
-}
-
 export default function App() {
-  const defaultParticipantsText = useMemo(() => participantsToText(createDefaultParticipants()), []);
-  const [participantInput, setParticipantInput] = useState(() => {
-    return localStorage.getItem(STORAGE_KEYS.participants) ?? defaultParticipantsText;
-  });
-  const [winnerHistory, setWinnerHistory] = useState<WinnerRecord[]>(readStoredWinners);
-  const [allowRepeat, setAllowRepeat] = useState(() => localStorage.getItem(STORAGE_KEYS.allowRepeat) === 'true');
-  const [autoStop, setAutoStop] = useState(() => localStorage.getItem(STORAGE_KEYS.autoStop) !== 'false');
-  const [phase, setPhase] = useState<DrawPhase>('idle');
-  const [rotation, setRotation] = useState(0);
-  const [wheelTransition, setWheelTransition] = useState('none');
-  const [currentWinner, setCurrentWinner] = useState<string | null>(null);
-  const [notice, setNotice] = useState('');
-  const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
-  const [quickCount, setQuickCount] = useState(RECOMMENDED_PARTICIPANT_COUNT);
-  const [isImporting, setIsImporting] = useState(false);
-  const [isGuideOpen, setIsGuideOpen] = useState(() => {
-    return localStorage.getItem(STORAGE_KEYS.guideSeen) !== 'true';
-  });
-  const [browserMemory, setBrowserMemory] = useState<BrowserMemorySnapshot | null>(
-    readBrowserMemorySnapshot,
-  );
-  const rotationRef = useRef(rotation);
-  const pendingWinnerRef = useRef<string | null>(null);
-  const autoStopTimerRef = useRef<number | null>(null);
-
-  const participants = useMemo(() => parseParticipants(participantInput), [participantInput]);
-  const winnerIds = useMemo(() => winnerHistory.map((record) => record.id), [winnerHistory]);
-  const availableParticipants = useMemo(
-    () => getAvailableParticipants(participants, winnerIds, allowRepeat),
-    [allowRepeat, participants, winnerIds],
-  );
-
-  const isBusy = phase === 'spinning' || phase === 'stopping';
-  const isOverParticipantLimit = participants.length > MAX_PARTICIPANT_COUNT;
-  const areControlsDisabled = isBusy || isImporting;
-
-  useEffect(() => {
-    rotationRef.current = rotation;
-  }, [rotation]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.participants, participantInput);
-  }, [participantInput]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.winners, JSON.stringify(winnerHistory));
-  }, [winnerHistory]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.allowRepeat, String(allowRepeat));
-  }, [allowRepeat]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.autoStop, String(autoStop));
-  }, [autoStop]);
-
-  useEffect(() => {
-    return () => {
-      if (autoStopTimerRef.current !== null) {
-        window.clearTimeout(autoStopTimerRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    function handleFullscreenChange() {
-      setIsFullscreen(Boolean(document.fullscreenElement));
-    }
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
-
-  useEffect(() => {
-    if (phase !== 'spinning') {
-      return undefined;
-    }
-
-    let animationFrame = 0;
-    let previousTimestamp = performance.now();
-
-    const tick = (timestamp: number) => {
-      const elapsedSeconds = Math.min((timestamp - previousTimestamp) / 1000, 0.05);
-      previousTimestamp = timestamp;
-      setRotation((previousRotation) => previousRotation + elapsedSeconds * 980);
-      animationFrame = requestAnimationFrame(tick);
-    };
-
-    animationFrame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(animationFrame);
-  }, [phase]);
-
-  function startDraw() {
-    if (participants.length === 0) {
-      setNotice('請先輸入抽獎名單。');
-      return;
-    }
-
-    if (isOverParticipantLimit) {
-      setNotice(`目前名單 ${participants.length} 人，最多支援 ${MAX_PARTICIPANT_COUNT} 人。`);
-      return;
-    }
-
-    if (availableParticipants.length === 0) {
-      setNotice('剩餘可抽名單為空，請清除中獎紀錄或開啟重複中獎。');
-      return;
-    }
-
-    setWheelTransition('none');
-    setCurrentWinner(null);
-    setNotice('');
-    pendingWinnerRef.current = null;
-    setPhase('spinning');
-
-    if (autoStop) {
-      autoStopTimerRef.current = window.setTimeout(() => {
-        autoStopTimerRef.current = null;
-        stopDraw();
-      }, AUTO_STOP_DELAY_MS);
-    }
+  const [initial] = useState(readAppData), [data, setData] = useState<AppData>(initial.data), [currentRoute, setRoute] = useState(route);
+  const [notice, setNotice] = useState(initial.warnings.join(' ')), [name, setName] = useState(''), [showArchived, setShowArchived] = useState(false);
+  const [saving, setSaving] = useState(false), [damaged, setDamaged] = useState(initial.warnings.some(w => w.startsWith('目前保存資料無法讀取')));
+  const owner = useRef<(() => void) | null>(null), ownerVersion = useRef(0), messageRef = useRef<HTMLDivElement>(null);
+  const activity = data.activities.find(a => a.id === currentRoute.id);
+  useEffect(() => { const handleHash = () => { setRoute(route()); setNotice(''); window.scrollTo({top:0,behavior:'instant'}); }; window.addEventListener('hashchange', handleHash); return () => window.removeEventListener('hashchange', handleHash); }, []);
+  useEffect(() => subscribeStore(() => { const next = readAppData(); setData(next.data); setDamaged(next.warnings.some(w => w.startsWith('目前保存資料無法讀取'))); if (next.warnings.length) setNotice(next.warnings.join(' ')); }), []);
+  useEffect(() => { void transaction(() => {}).then(setData).catch(error => setNotice(error instanceof Error ? error.message : '資料尚未保存，請先下載備份。')); return () => owner.current?.(); }, []);
+  async function mutate(action: (next: AppData) => void) {
+    setSaving(true);
+    try { const next = await transaction(action); setData(next); return next; }
+    catch (error) { setNotice(error instanceof Error ? error.message : '資料尚未保存，請下載備份。'); throw error; }
+    finally { setSaving(false); }
   }
-
-  function stopDraw() {
-    if (autoStopTimerRef.current !== null) {
-      window.clearTimeout(autoStopTimerRef.current);
-      autoStopTimerRef.current = null;
-    }
-
-    if (availableParticipants.length === 0) {
-      setNotice('剩餘可抽名單為空，請清除中獎紀錄或開啟重複中獎。');
-      setPhase('idle');
-      return;
-    }
-
-    const winningCandidate = availableParticipants[randomIndex(availableParticipants.length)];
-    const winningIndex = participants.findIndex((participant) => participant === winningCandidate);
-
-    if (winningIndex < 0) {
-      setNotice('名單狀態已變更，請重新開始抽獎。');
-      setPhase('idle');
-      return;
-    }
-
-    const sliceAngle = 360 / participants.length;
-    const segmentCenter = (winningIndex + 0.5) * sliceAngle;
-    const currentRotation = rotationRef.current;
-    const currentNormalized = normalizeDegrees(currentRotation);
-    const targetNormalized = normalizeDegrees(360 - segmentCenter);
-    const slowDownDelta = normalizeDegrees(targetNormalized - currentNormalized);
-    const finalRotation = currentRotation + slowDownDelta + 360 * 7;
-
-    pendingWinnerRef.current = winningCandidate;
-    setCurrentWinner(winningCandidate);
-    setNotice('');
-    setPhase('stopping');
-    setWheelTransition('transform 5200ms cubic-bezier(0.08, 0.72, 0.11, 1)');
-    requestAnimationFrame(() => setRotation(finalRotation));
+  async function safe(action: () => Promise<unknown>) { try { await action(); } catch { /* The notice explains the failure. */ } }
+  function navigate(page: Page, id = activity?.id ?? data.activeActivityId) { location.hash = page === 'activities' || page === 'help' ? `#/${page}` : `#/activity/${id}/${page}`; }
+  async function addActivity() {
+    const label = name.trim(); if (!label) { setNotice('請先輸入活動名稱。'); return; }
+    const created = createActivity(label);
+    await mutate(next => { next.activities.push(created); next.activeActivityId = created.id; });
+    setName(''); navigate('prepare', created.id); setNotice('活動已建立，接著準備名單與獎項。');
   }
-
-  function handlePrimaryAction() {
-    if (phase === 'idle') {
-      startDraw();
-      return;
-    }
-
-    if (phase === 'spinning' && !autoStop) {
-      stopDraw();
-    }
+  async function updateActivity(updated: Activity) {
+    await mutate(next => {
+      const index = next.activities.findIndex(a => a.id === updated.id); if (index < 0) throw new Error('找不到這場活動。');
+      const live = next.activities[index]; assertActivityEditable(live);
+      if (live.archived) throw new Error('請先取消封存才能修改活動。');
+      const baseline = data.activities.find(a => a.id === updated.id);
+      if (JSON.stringify(live) !== JSON.stringify(baseline)) throw new Error('另一個分頁已更新活動，請確認最新資料後再修改。');
+      next.activities[index] = { ...updated, records: live.records, pendingDraw: live.pendingDraw };
+    });
   }
-
-  function handleStopAnimationEnd() {
-    if (phase !== 'stopping' || !pendingWinnerRef.current) {
-      return;
-    }
-
-    const winner = pendingWinnerRef.current;
-    pendingWinnerRef.current = null;
-    setWheelTransition('none');
-    setWinnerHistory((records) => [
-      {
-        id: winner,
-        round: records.length + 1,
-        drawnAt: new Date().toISOString(),
-      },
-      ...records,
-    ]);
-    setNotice(`恭喜 ${winner} 中獎`);
-    setPhase('idle');
+  function updatePreferences(preferences: Preferences) { void safe(() => mutate(next => { next.preferences = preferences; })); }
+  function releaseOwner() { ownerVersion.current += 1; owner.current?.(); owner.current = null; }
+  async function acquireOwner() {
+    if (!activity) return false;
+    releaseOwner(); const version = ownerVersion.current; const release = await claimDrawOwner(activity.id);
+    if (version !== ownerVersion.current) { release?.(); return false; }
+    if (!release) { setNotice('這場活動正在另一個分頁抽獎，請回原分頁繼續。'); return false; }
+    owner.current = release; return true;
   }
-
-  function resetParticipants() {
-    setParticipantInput(defaultParticipantsText);
-    setQuickCount(RECOMMENDED_PARTICIPANT_COUNT);
-    setNotice('名單已重設為 1-120。');
-  }
-
-  function generateSequentialParticipants() {
-    const safeCount = Math.min(Math.max(Math.trunc(quickCount) || 1, 1), MAX_PARTICIPANT_COUNT);
-    setQuickCount(safeCount);
-    setParticipantInput(participantsToText(createDefaultParticipants(safeCount)));
-    setNotice(`已產生 1-${safeCount} 的抽獎名單。`);
-  }
-
-  async function importParticipantFile(file: File) {
-    if (isBusy) {
-      return;
-    }
-
-    setIsImporting(true);
-    setNotice(`正在匯入 ${file.name}...`);
-
+  async function start(prizeId: string | null, count: number, mode: PendingDraw['mode']) {
+    if (!activity || !await acquireOwner()) return null;
+    const claimedVersion = ownerVersion.current;
     try {
-      const importedParticipants = await importParticipantsFromFile(file);
-
-      if (importedParticipants.length === 0) {
-        setNotice('匯入檔案沒有可用名單。');
-        return;
-      }
-
-      setParticipantInput(participantsToText(importedParticipants));
-      setQuickCount(Math.min(importedParticipants.length, MAX_PARTICIPANT_COUNT));
-      setCurrentWinner(null);
-
-      if (importedParticipants.length > MAX_PARTICIPANT_COUNT) {
-        setNotice(
-          `已匯入 ${importedParticipants.length} 筆；目前最多支援 ${MAX_PARTICIPANT_COUNT} 人，請刪減名單後再抽獎。`,
-        );
-        return;
-      }
-
-      setNotice(`已匯入 ${importedParticipants.length} 筆名單。`);
-    } catch (error) {
-      setNotice(error instanceof Error ? error.message : '匯入失敗，請確認檔案格式。');
-    } finally {
-      setIsImporting(false);
-    }
+      let selected: PendingDraw | null = null;
+      await mutate(next => { const current = next.activities.find(a => a.id === activity.id); if (!current) throw new Error('找不到活動。'); selected = structuredClone(beginDraw(current, prizeId, count, mode)); });
+      return selected;
+    } catch (error) { if (claimedVersion === ownerVersion.current) releaseOwner(); throw error; }
   }
-
-  function clearWinnerHistory() {
-    const confirmed = window.confirm('確定清除全部中獎紀錄？');
-    if (!confirmed) {
-      return;
-    }
-
-    setWinnerHistory([]);
-    setCurrentWinner(null);
-    setNotice('中獎紀錄已清除。');
+  async function recover() {
+    if (!activity || !await acquireOwner()) return null;
+    const current = readAppData().data.activities.find(a => a.id === activity.id);
+    if (!current?.pendingDraw) { releaseOwner(); setNotice('本輪已在其他分頁完成，請重新查看結果。'); setData(readAppData().data); return null; }
+    return structuredClone(current.pendingDraw);
   }
-
-  function saveBrowserMemory() {
-    const snapshot: BrowserMemorySnapshot = {
-      participantsText: participantInput,
-      winnerHistory,
-      allowRepeat,
-      autoStop,
-      savedAt: new Date().toISOString(),
-    };
-
-    saveBrowserMemorySnapshot(snapshot);
-    setBrowserMemory(snapshot);
-    setNotice('已記住目前抽獎資料。');
+  async function reveal(drawId: string, all: boolean, expectedCursor: number) {
+    let revealed: DrawRecord[] = [];
+    await mutate(next => { const current = next.activities.find(a => a.id === activity?.id); if (!current) throw new Error('找不到活動。'); revealed = revealNext(current, drawId, all, expectedCursor); });
+    return revealed;
   }
-
-  function restoreBrowserMemory() {
-    if (!browserMemory) {
-      setNotice('尚未建立瀏覽器記憶。');
-      return;
-    }
-
-    const confirmed = window.confirm('還原瀏覽器記憶會覆蓋目前名單與中獎紀錄，確定要還原？');
-
-    if (!confirmed) {
-      return;
-    }
-
-    const restoredParticipants = parseParticipants(browserMemory.participantsText);
-    setParticipantInput(browserMemory.participantsText);
-    setWinnerHistory(browserMemory.winnerHistory);
-    setAllowRepeat(browserMemory.allowRepeat);
-    setAutoStop(browserMemory.autoStop);
-    setCurrentWinner(null);
-    setQuickCount(
-      Math.min(
-        Math.max(restoredParticipants.length || RECOMMENDED_PARTICIPANT_COUNT, 1),
-        MAX_PARTICIPANT_COUNT,
-      ),
-    );
-    setNotice('已還原瀏覽器記憶。');
+  async function status(recordId: string, value: DrawRecord['status']) {
+    await mutate(next => { const current = next.activities.find(a => a.id === activity?.id); if (!current) throw new Error('找不到活動。'); markRecord(current, recordId, value); });
+    setNotice('原紀錄已保留，該參加者已排除，可以補抽缺額。');
   }
-
-  function clearBrowserMemory() {
-    const confirmed = window.confirm('確定清除這份瀏覽器記憶？目前畫面資料不會被清除。');
-
-    if (!confirmed) {
-      return;
-    }
-
-    clearBrowserMemorySnapshot();
-    setBrowserMemory(null);
-    setNotice('瀏覽器記憶已清除。');
+  async function loadBackup(input: string) {
+    await mutate(next => { importBackup(next, input); }); setNotice('備份已新增為獨立活動，原活動完整保留。'); navigate('activities');
   }
-
-  function exportWinnerHistory() {
-    const chronologicalRecords = [...winnerHistory].reverse();
-    downloadCsv(createCsvFilename(), winnerHistoryToCsv(chronologicalRecords));
-  }
-
-  async function toggleFullscreen() {
-    try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      } else {
-        await document.documentElement.requestFullscreen();
-      }
-    } catch {
-      setNotice('無法切換全螢幕，請確認瀏覽器權限。');
-    }
-  }
-
-  function closeGuide() {
-    localStorage.setItem(STORAGE_KEYS.guideSeen, 'true');
-    setIsGuideOpen(false);
-  }
-
-  return (
-    <div className={`app-shell ${isFullscreen ? 'is-fullscreen' : ''}`}>
-      <header className="temple-header">
-        <div className="brand-mark">
-          <img src={`${import.meta.env.BASE_URL}assets/logo.svg`} alt="" />
-        </div>
-        <div className="brand-title">
-          <h1>土城廣厚宮功德會抽獎</h1>
-          <button type="button" className="guide-open-button" onClick={() => setIsGuideOpen(true)}>
-            使用說明
-          </button>
-        </div>
-        <img
-          className="mascot-image"
-          src={`${import.meta.env.BASE_URL}assets/guanghougong-mascot.png`}
-          alt="土城廣厚宮功德會抽獎主視覺"
-        />
-      </header>
-
-      <main className="draw-layout">
-        <section className="wheel-stage" aria-label="抽獎輪盤">
-          <Wheel
-            participants={participants}
-            rotation={rotation}
-            transition={wheelTransition}
-            winningId={currentWinner}
-            isBusy={isBusy}
-            onStopAnimationEnd={handleStopAnimationEnd}
-          />
-
-          <div
-            className={`result-burst ${currentWinner ? 'show' : ''} ${
-              currentWinner && currentWinner.length > 8 ? 'is-long' : ''
-            }`}
-            aria-live="assertive"
-          >
-            <span>中獎者</span>
-            <strong>{currentWinner ?? '--'}</strong>
-          </div>
-
-          <div className="primary-actions">
-            <button
-              type="button"
-              className={`button draw-button ${phase === 'spinning' ? 'stop' : ''}`}
-              onClick={handlePrimaryAction}
-              disabled={phase === 'stopping' || isImporting || (phase === 'spinning' && autoStop)}
-            >
-              {phase === 'spinning'
-                ? autoStop
-                  ? '系統自動停止中'
-                  : '停止抽獎'
-                : phase === 'stopping'
-                  ? '開獎中'
-                  : '開始抽獎'}
-            </button>
-            <button type="button" className="button fullscreen-button" onClick={toggleFullscreen}>
-              {isFullscreen ? '離開全螢幕' : '全螢幕模式'}
-            </button>
-          </div>
-
-          <fieldset className="draw-mode" disabled={isBusy || isImporting}>
-            <legend>停止方式</legend>
-            <div className="draw-mode-options">
-              <label className={`draw-mode-option ${autoStop ? 'is-selected' : ''}`}>
-                <input
-                  type="radio"
-                  name="draw-stop-mode"
-                  checked={autoStop}
-                  onChange={() => setAutoStop(true)}
-                />
-                <span className="draw-mode-copy">
-                  <strong>自動停止</strong>
-                  <small>開始後約 4 秒自動開獎</small>
-                </span>
-              </label>
-              <label className={`draw-mode-option ${autoStop ? '' : 'is-selected'}`}>
-                <input
-                  type="radio"
-                  name="draw-stop-mode"
-                  checked={!autoStop}
-                  onChange={() => setAutoStop(false)}
-                />
-                <span className="draw-mode-copy">
-                  <strong>手動停止</strong>
-                  <small>再次按「停止抽獎」才開獎</small>
-                </span>
-              </label>
-            </div>
-          </fieldset>
-
-          {notice ? <p className="notice">{notice}</p> : null}
-        </section>
-
-        <aside className="control-panel">
-          <ParticipantEditor
-            value={participantInput}
-            totalCount={participants.length}
-            availableCount={availableParticipants.length}
-            winnerCount={winnerHistory.length}
-            recommendedCount={RECOMMENDED_PARTICIPANT_COUNT}
-            maxCount={MAX_PARTICIPANT_COUNT}
-            quickCount={quickCount}
-            isOverLimit={isOverParticipantLimit}
-            allowRepeat={allowRepeat}
-            disabled={areControlsDisabled}
-            isImporting={isImporting}
-            onChange={setParticipantInput}
-            onReset={resetParticipants}
-            onImportFile={importParticipantFile}
-            onQuickCountChange={setQuickCount}
-            onGenerateSequential={generateSequentialParticipants}
-            onToggleAllowRepeat={setAllowRepeat}
-          />
-
-          <BrowserMemoryPanel
-            savedAt={browserMemory?.savedAt ?? null}
-            disabled={areControlsDisabled}
-            onSave={saveBrowserMemory}
-            onRestore={restoreBrowserMemory}
-            onClear={clearBrowserMemory}
-          />
-
-          <WinnerHistory
-            records={winnerHistory}
-            currentWinner={currentWinner}
-            disabled={isBusy}
-            onClear={clearWinnerHistory}
-            onExport={exportWinnerHistory}
-          />
-        </aside>
-      </main>
-
-      <FirstRunGuide open={isGuideOpen} onClose={closeGuide} />
-    </div>
-  );
+  const currentId = activity?.id ?? data.activeActivityId ?? data.activities.find(a => !a.archived)?.id;
+  const page = currentRoute.page;
+  return <div className={`app-shell ${data.preferences.largeText ? 'large-text' : ''} ${data.preferences.reducedMotion ? 'reduce-motion' : ''}`}>
+    <a className="skip-link" href="#main-content" onClick={event => { event.preventDefault(); const main = document.getElementById('main-content'); main?.focus(); main?.scrollIntoView(); }}>跳到主要內容</a>
+    <header className="app-header"><a className="brand" href="#/activities"><img src={`${import.meta.env.BASE_URL}assets/logo.svg`} alt="" /><span>土城廣厚宮<span>功德會抽獎</span></span></a><div className="accessibility-tools"><button className="button header-button" aria-pressed={data.preferences.largeText} onClick={() => updatePreferences({ ...data.preferences, largeText: !data.preferences.largeText })}>大字 {data.preferences.largeText ? '開' : '關'}</button><button className="button header-button" aria-pressed={data.preferences.reducedMotion} onClick={() => updatePreferences({ ...data.preferences, reducedMotion: !data.preferences.reducedMotion })}>減少動畫 {data.preferences.reducedMotion ? '開' : '關'}</button></div></header>
+    <nav className="main-nav" aria-label="主要功能">{([['activities', '活動'], ['prepare', '準備'], ['draw', '現場抽獎'], ['results', '結果與備份'], ['help', '說明']] as const).map(([target, label]) => <a key={target} href={target === 'activities' || target === 'help' ? `#/${target}` : currentId ? `#/activity/${currentId}/${target}` : '#/activities'} aria-current={page === target ? 'page' : undefined} className={page === target ? 'active' : ''}>{label}</a>)}</nav>
+    <main id="main-content" className="main-content" tabIndex={-1}>
+      <div className="system-status no-print"><OfflineStatus data={data} onNotice={setNotice} /><span>{saving ? '正在保存…' : '資料自動保存在這台裝置'}</span></div>
+      {damaged && <section className="panel stack no-print"><h2>活動資料救援</h2><p>目前保存資料無法讀取。先下載原始資料留存，再選擇有效的活動 JSON 備份恢復；損壞原文也會另存於這台瀏覽器。</p><div className="button-row"><button className="button button-secondary" onClick={downloadRawRecovery}>下載原始資料</button><label className="button button-primary file-button">選擇有效備份恢復<input type="file" accept=".json" onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void (async () => { try { if (file.size > 10 * 1024 * 1024) throw new Error('備份檔請保持在 10 MB 以內。'); const recovered = await restoreFromBackup(await file.text()); setData(recovered); setDamaged(false); setNotice('資料已恢復，原始損壞資料仍另存保留。'); navigate('activities'); } catch (error) { setNotice(error instanceof Error ? error.message : '尚未恢復。'); } })(); }} /></label></div></section>}
+      {notice && <div className="notice no-print" role="status" ref={messageRef}><span>{notice}</span><button aria-label="關閉提示" onClick={() => setNotice('')}>×</button></div>}
+      {page === 'activities' && <div className="stack">
+        <section className="activity-hero"><div><p>土城廣厚宮功德會抽獎</p><h1>今天的好運，<br />從這裡開始。</h1><p>準備名單、現場開獎、帶走結果。<br />一場一場，清楚保存。</p><a className="text-link" href="#/help">第一次使用？看完整流程</a></div><img src={`${import.meta.env.BASE_URL}assets/mascot-welcome.webp`} alt="迎接大家的抽獎吉祥物" /></section>
+        <section className="create-activity panel"><div><h2>建立一場活動</h2><p className="muted">先取個名稱，名單和獎項可以慢慢準備。</p></div><form className="field-row" onSubmit={e => { e.preventDefault(); void safe(addActivity); }}><label className="field">活動名稱<input maxLength={100} value={name} placeholder="例如：功德會摸彩活動" onChange={e => setName(e.target.value)} required /></label><button className="button button-primary" disabled={saving}>建立活動</button></form></section>
+        <section><div className="section-heading"><h2>我的活動</h2><label className="check-field"><input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} />顯示封存</label></div>
+          {!data.activities.length ? <div className="panel empty-state"><h3>建立第一場活動</h3><p>輸入上方活動名稱，就能準備名單與獎項。</p></div> : <div className="activity-list">{data.activities.filter(a => showArchived || !a.archived).map(a => <article className={`activity-entry ${a.archived ? 'archived' : ''}`} key={a.id}><div className="activity-entry-heading"><div><h3>{a.name}</h3><p>{a.participants.length} 人 · {a.prizes.length ? `${a.prizes.length} 個獎項` : '自由抽獎'} · {a.records.filter(r => r.status === 'won').length} 名中獎</p></div><span className="badge">{a.archived ? '已封存' : a.pendingDraw ? '本輪待接續' : a.records.length ? '進行中' : '準備中'}</span></div><div className="button-row"><a className="button button-primary" href={`#/activity/${a.id}/${a.pendingDraw || a.participants.length ? 'draw' : 'prepare'}`}>{a.pendingDraw ? '接續本輪' : a.participants.length ? '前往抽獎' : '準備名單'}</a><a className="button button-secondary" href={`#/activity/${a.id}/prepare`}>準備</a><a className="button button-secondary" href={`#/activity/${a.id}/results`}>結果</a><button className="button button-secondary" disabled={Boolean(a.pendingDraw)} onClick={() => { void safe(async () => { const copy = duplicateActivity(a); await mutate(next => { next.activities.push(copy); next.activeActivityId = copy.id; }); navigate('prepare', copy.id); setNotice('已複製名單與設定，抽獎紀錄從零開始。'); }); }}>複製</button><button className="button button-secondary" disabled={Boolean(a.pendingDraw)} onClick={() => { void safe(() => mutate(next => { const live = next.activities.find(item => item.id === a.id); if (live) { assertActivityEditable(live); live.archived = !live.archived; } })); }}>{a.archived ? '取消封存' : '封存'}</button></div></article>)}</div>}
+        </section><div className="backup-footer panel"><div><h3>活動資料，隨時帶走</h3><p>換裝置或清除瀏覽器前，先下載完整備份。</p></div><button className="button button-secondary" onClick={() => downloadBackup(data)}>備份全部活動</button><label className="button button-secondary file-button">匯入活動備份<input type="file" accept=".json" onChange={e => { const file = e.target.files?.[0]; e.target.value = ''; if (file) void safe(async () => { if (file.size > 10 * 1024 * 1024) { setNotice('備份檔請保持在 10 MB 以內。'); return; } await loadBackup(await file.text()); }); }} /></label></div>
+      </div>}
+      {page === 'help' && <HelpPage />}
+      {page !== 'activities' && page !== 'help' && !activity && <div className="panel empty-state"><h2>先選擇一場活動</h2><p>每場活動的名單與結果分開保存。</p><a className="button button-primary" href="#/activities">回活動列表</a></div>}
+      {activity && page === 'prepare' && <><div className="page-heading"><div><p className="muted">活動準備</p><h1>{activity.name}</h1><p>確認名單、分組與獎項，現場就能輕鬆抽。</p></div><a className="button button-primary" href={`#/activity/${activity.id}/draw`}>準備好了，前往抽獎</a></div>{(activity.pendingDraw || activity.archived) && <div className="alert">{activity.pendingDraw ? '本輪尚未公布完成，請先接續抽獎。' : '已封存活動可查看，請先取消封存才能修改。'}</div>}<ActivitySetup key={activity.id} activity={activity} disabled={Boolean(activity.pendingDraw) || activity.archived || saving} onChange={updateActivity} onNotice={setNotice} /></>}
+      {activity && page === 'draw' && <DrawStage key={activity.id} activity={activity} preferences={data.preferences} onPreferences={updatePreferences} onSettings={updateActivity} onNotice={setNotice} onStart={start} onRecover={recover} onReveal={reveal} onRelease={releaseOwner} />}
+      {activity && page === 'results' && <ActivityResults key={activity.id} activity={activity} data={data} onStatus={(id, value) => safe(() => status(id, value))} onImport={loadBackup} onNotice={setNotice} />}
+    </main><footer className="app-footer no-print"><span>土城廣厚宮功德會抽獎</span><span>名單留在你的裝置 · 活動備份請自行保管</span></footer>
+  </div>;
 }

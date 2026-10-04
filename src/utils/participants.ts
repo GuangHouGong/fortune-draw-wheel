@@ -11,7 +11,7 @@ export function participantsToText(participants: string[]): string {
 }
 
 function normalizeParticipantName(value: string): string {
-  return value.trim().replace(/\s+/g, ' ');
+  return value.trim();
 }
 
 function splitParticipantSegment(segment: string, shouldSplitWhitespace: boolean): string[] {
@@ -43,7 +43,7 @@ export function parseParticipants(input: string): string[] {
     const hasCommaSeparators = commaSegments.length > 1;
 
     return commaSegments.flatMap((segment) => {
-      const shouldSplitWhitespace = !hasCommaSeparators && (!hasLineBreaks || /^(\s*\d+\s*)+$/u.test(segment));
+      const shouldSplitWhitespace = !hasCommaSeparators && /^(\s*\d+\s*)+$/u.test(segment);
       return splitParticipantSegment(segment, shouldSplitWhitespace);
     });
   });
