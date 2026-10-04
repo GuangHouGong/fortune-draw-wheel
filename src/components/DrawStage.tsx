@@ -90,7 +90,7 @@ export default function DrawStage({ activity, preferences, onPreferences, onSett
       const all = draw.mode === 'batch';
       const records = sandbox.current ? revealNext(sandbox.current, draw.id, all, draw.revealedCount) : await onReveal(draw.id, all, draw.revealedCount);
       if (!mounted.current) return;
-      if (!records.length) { transition('paused'); onNotice('這筆結果已處理，請回到活動後恢復或查看結果。'); return; }
+      if (!records.length) { transition('paused'); onNotice('這筆結果已處理，請回活動列表接續抽獎，或查看中獎結果。'); return; }
       draw.revealedCount += records.length;
       if (sandbox.current?.pendingDraw) draw.revealedCount = sandbox.current.pendingDraw.revealedCount;
       setResults(previous => [...previous, ...records]);
@@ -104,7 +104,7 @@ export default function DrawStage({ activity, preferences, onPreferences, onSett
       } else {
         pending.current = null; sandbox.current = null; onRelease();
       }
-    } catch (error) { transition('paused'); onNotice(error instanceof Error ? error.message : '結果尚未保存，請稍後恢復本輪。'); }
+    } catch (error) { transition('paused'); onNotice(error instanceof Error ? error.message : '結果尚未儲存，請稍後接續本輪抽獎。'); }
     finally { revealing.current = false; }
   }
   async function start() {
@@ -135,9 +135,9 @@ export default function DrawStage({ activity, preferences, onPreferences, onSett
   }
   async function changeMethod(method: Activity['settings']['method']) {
     try { await onSettings({ ...activity, settings: { ...activity.settings, method } });
-    if (method !== 'instant' && mode === 'batch') setMode('sequence'); } catch (error) { onNotice(error instanceof Error ? error.message : '設定尚未保存。'); }
+    if (method !== 'instant' && mode === 'batch') setMode('sequence'); } catch (error) { onNotice(error instanceof Error ? error.message : '設定尚未儲存。'); }
   }
-  async function settings(updated: Activity) { try { await onSettings(updated); } catch (error) { onNotice(error instanceof Error ? error.message : '設定尚未保存。'); } }
+  async function settings(updated: Activity) { try { await onSettings(updated); } catch (error) { onNotice(error instanceof Error ? error.message : '設定尚未儲存。'); } }
   async function projection() {
     const next = !projecting; setProjecting(next);
     if (next && document.documentElement.requestFullscreen) { try { await document.documentElement.requestFullscreen(); } catch { /* Projection layout also works without native fullscreen. */ } }
@@ -145,11 +145,11 @@ export default function DrawStage({ activity, preferences, onPreferences, onSett
   }
   const nextPrize = activity.prizes.slice(Math.max(0, activity.prizes.findIndex(p => p.id === prizeId) + 1)).find(p => remainingPrizeSlots(activity, p.id) > 0);
   const latest = results.at(-1), left = pending.current ? pending.current.winners.length - pending.current.revealedCount : 0;
-  const primaryLabel = loading ? '正在保存本輪…' : phase === 'running' ? '停止並開獎' : phase === 'stopping' ? '即將揭曉…' : pending.current ? '繼續連抽' : recovered ? '恢復上次本輪' : remaining === 0 ? nextPrize ? '下一獎項' : '本場獎項已完成' : phase === 'revealed' ? '再抽下一位' : '開始抽獎';
+  const primaryLabel = loading ? '正在儲存本輪…' : phase === 'running' ? '停止並開獎' : phase === 'stopping' ? '即將揭曉…' : pending.current ? '繼續連抽' : recovered ? '接續上次抽獎' : remaining === 0 ? nextPrize ? '下一獎項' : '本場獎項已完成' : phase === 'revealed' ? '再抽下一位' : '開始抽獎';
   return <section className={`draw-workspace ${projecting ? 'projection-mode' : ''}`}>
     <div className="stage-heading"><div><p className="muted">{activity.name}</p><h2>{prize?.name || '好運抽獎'}</h2></div><button className="button button-secondary" onClick={() => { void projection(); }}>{projecting ? '離開投影' : '投影模式'}</button></div>
     {trial && <div className="trial-banner">試抽中 · 不會寫入正式紀錄或扣除名額</div>}
-    {recovered && <div className="alert">上次抽獎尚未完成。按「恢復上次本輪」會接續原本結果，不會重新抽選。</div>}
+    {recovered && <div className="alert">上次抽獎尚未完成。按「接續上次抽獎」會接續原本結果，不會重新抽選。</div>}
     <div className="draw-columns">
       <div className="draw-stage">
         <div className={`stage-visual ${activity.settings.method !== 'wheel' ? 'has-ticker' : ''}`}>
@@ -162,7 +162,7 @@ export default function DrawStage({ activity, preferences, onPreferences, onSett
           {latest && !busy && <small>{latest.groupName || '未分組'}{latest.prizeName ? ` · ${latest.prizeName}` : ''}</small>}
         </div>
         {results.length > 1 && <div className="batch-results">{results.map((record, index) => <span key={record.id}><small>{index + 1}</small>{display(record)}</span>)}</div>}
-        <div className="draw-action-bar"><button className="button main-draw-button" onClick={primary} disabled={loading || phase === 'stopping' || (!pending.current && !recovered && (activity.archived || (!availableCandidates.length && !(remaining === 0 && nextPrize)) || (remaining === 0 && !nextPrize) || (!trial && !supportsLocks())))}>{primaryLabel}</button>{pending.current?.mode === 'sequence' && <button className="button button-secondary" onClick={() => { pauseRef.current = true; setSequencePaused(true); if (nextRoundTimer.current) clearTimeout(nextRoundTimer.current); if (phase === 'revealed') transition('paused'); }} disabled={sequencePaused}>{sequencePaused ? '已設定暫停' : '暫停連抽'}</button>}</div>
+        <div className="draw-action-bar"><button className="button main-draw-button" onClick={primary} disabled={loading || phase === 'stopping' || (!pending.current && !recovered && (activity.archived || (!availableCandidates.length && !(remaining === 0 && nextPrize)) || (remaining === 0 && !nextPrize) || (!trial && !supportsLocks())))}>{primaryLabel}</button>{pending.current?.mode === 'sequence' && <button className="button button-secondary" onClick={() => { pauseRef.current = true; setSequencePaused(true); if (nextRoundTimer.current) clearTimeout(nextRoundTimer.current); if (phase === 'revealed') transition('paused'); }} disabled={sequencePaused}>{sequencePaused ? '公布後暫停' : '暫停連抽'}</button>}</div>
         {!pending.current && remaining === 0 && !nextPrize && <a className="button button-primary" href={`#/activity/${activity.id}/results`}>查看結果與下載備份</a>}
         <p className="stage-status">{busy ? activity.settings.autoStop ? '自動開獎，也可提早按停止' : '按停止並開獎，公布這一輪' : left ? `本輪還有 ${left} 位等待公布` : `${availableCandidates.length} 人可抽${Number.isFinite(remaining) ? ` · 本獎項剩 ${remaining} 名` : ''}`}</p>
       </div>
@@ -170,19 +170,19 @@ export default function DrawStage({ activity, preferences, onPreferences, onSett
         <div className="section-heading"><h3>這一輪怎麼抽</h3><span className="badge">{activity.participants.length} 人</span></div>
         <label className="field">獎項<select value={prizeId ?? ''} disabled={locked} onChange={e => { setPrizeId(e.target.value || null); lastPool.current = null; setResults([]); transition('ready'); }}><option value="">自由抽獎</option>{activity.prizes.map(p => <option key={p.id} value={p.id}>{p.name}（{remainingPrizeSlots(activity, p.id)} 名可抽）</option>)}</select></label>
         <div className="method-buttons" role="group" aria-label="抽獎呈現方式">{([['wheel', '轉盤'], ['ticker', '跳號'], ['instant', '快速開獎']] as const).map(([id, label]) => <button key={id} className={`button ${activity.settings.method === id ? 'button-primary' : 'button-secondary'}`} disabled={locked} aria-pressed={activity.settings.method === id} onClick={() => { void changeMethod(id); }}>{label}</button>)}</div>
-        <label className="field">抽獎流程<select value={mode} disabled={locked} onChange={e => setMode(e.target.value as PendingDraw['mode'])}><option value="single">一次抽一位</option><option value="sequence">連續逐位開獎</option>{activity.settings.method === 'instant' && <option value="batch">一次公布多位</option>}</select></label>
+        <label className="field">抽獎流程<select value={mode} disabled={locked} onChange={e => setMode(e.target.value as PendingDraw['mode'])}><option value="single">一次抽一位</option><option value="sequence">連續抽，一位一位公布</option>{activity.settings.method === 'instant' && <option value="batch">一次公布多位</option>}</select></label>
         {mode !== 'single' && <label className="field">這輪人數<input type="number" min="1" max="200" value={count} disabled={locked} onChange={e => setCount(Number(e.target.value))} /></label>}
-        <label className="check-field"><input type="checkbox" checked={activity.settings.autoStop} disabled={locked} onChange={e => { void settings({ ...activity, settings: { ...activity.settings, autoStop: e.target.checked } }); }} />自動停止（約六秒）</label>
+        <label className="check-field"><input type="checkbox" checked={activity.settings.autoStop} disabled={locked} onChange={e => { void settings({ ...activity, settings: { ...activity.settings, autoStop: e.target.checked } }); }} />自動開獎（約六秒）</label>
         <label className="check-field"><input type="checkbox" checked={trial} disabled={locked} onChange={e => { setTrial(e.target.checked); setResults([]); transition('ready'); }} />先試抽，不計入正式結果</label>
         <details><summary>重複中獎與聲音設定</summary><div className="stack">
-          <label className="field">重複中獎<select value={activity.settings.repeatPolicy} disabled={locked} onChange={e => { void settings({ ...activity, settings: { ...activity.settings, repeatPolicy: e.target.value as Activity['settings']['repeatPolicy'] } }); }}><option value="activity">整場不重複</option><option value="prize">同獎項不重複</option><option value="none">允許跨輪重複</option></select></label>
+          <label className="field">重複中獎<select value={activity.settings.repeatPolicy} disabled={locked} onChange={e => { void settings({ ...activity, settings: { ...activity.settings, repeatPolicy: e.target.value as Activity['settings']['repeatPolicy'] } }); }}><option value="activity">整場不重複中獎</option><option value="prize">同一獎項不重複中獎</option><option value="none">允許重複中獎</option></select></label>
           <label className="check-field"><input type="checkbox" checked={preferences.sound} onChange={e => { void audio.enable(); onPreferences({ ...preferences, sound: e.target.checked }); }} />抽獎音效</label>
           <label className="check-field"><input type="checkbox" checked={preferences.speech} onChange={e => { void audio.enable(); onPreferences({ ...preferences, speech: e.target.checked }); }} />朗讀中獎者</label>
-          {preferences.speech && <><label className="field">本機中文聲音<select value={preferences.voiceURI} onChange={e => onPreferences({ ...preferences, voiceURI: e.target.value })}><option value="">自動選擇</option>{audio.voices.map(v => <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>)}</select></label><label className="field">朗讀速度<input type="range" min=".6" max="1.3" step=".1" value={preferences.speechRate} onChange={e => onPreferences({ ...preferences, speechRate: Number(e.target.value) })} /></label><p className="muted">{audio.voices.length ? '使用裝置本機中文語音。' : '這台裝置尚無可用的本機中文聲音，抽獎仍可正常進行。'}</p></>}
-          <div className="button-row"><button className="button button-secondary" onClick={() => { void audio.enable(); audio.speak('土城廣厚宮功德會，祝大家好運。'); }}>試聽</button><button className="button button-secondary" disabled={!results.length} onClick={() => audio.speak(results.map(r => `恭喜 ${display(r)}，${r.prizeName || '中獎'}`).join('。'))}>再念一次</button><button className="button button-secondary" onClick={() => { audio.stop(); onPreferences({ ...preferences, sound: false, speech: false }); }}>靜音</button></div>
+          {preferences.speech && <><label className="field">裝置內建中文語音<select value={preferences.voiceURI} onChange={e => onPreferences({ ...preferences, voiceURI: e.target.value })}><option value="">自動選擇</option>{audio.voices.map(v => <option key={v.voiceURI} value={v.voiceURI}>{v.name}</option>)}</select></label><label className="field">朗讀速度<input type="range" min=".6" max="1.3" step=".1" value={preferences.speechRate} onChange={e => onPreferences({ ...preferences, speechRate: Number(e.target.value) })} /></label><p className="muted">{audio.voices.length ? '使用這台裝置的內建中文語音。' : '這台裝置沒有可用的內建中文語音，仍可正常抽獎。'}</p></>}
+          <div className="button-row"><button className="button button-secondary" onClick={() => { void audio.enable(); audio.speak('土城廣厚宮功德會，祝大家好運。'); }}>試聽</button><button className="button button-secondary" disabled={!results.length} onClick={() => audio.speak(results.map(r => `恭喜 ${display(r)}，${r.prizeName || '中獎'}`).join('。'))}>再唸一次</button><button className="button button-secondary" onClick={() => { audio.stop(); onPreferences({ ...preferences, sound: false, speech: false }); }}>靜音</button></div>
           <button className="button button-secondary" onClick={audio.stop}>停止朗讀</button>
         </div></details>
-        {!supportsLocks() && <p className="alert">請以新版 Safari 或 Chrome 開啟，才能可靠保存正式抽獎。此處仍可試抽。</p>}
+        {!supportsLocks() && <p className="alert">請以新版 Safari 或 Chrome 開啟，才能可靠儲存正式抽獎。此處仍可試抽。</p>}
         {activity.archived && <p className="alert">這場活動已封存，請先回活動列表取消封存。</p>}
         <a className="text-link" href={`#/activity/${activity.id}/prepare`}>調整名單與獎項</a>
       </aside>

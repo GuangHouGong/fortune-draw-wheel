@@ -32,14 +32,14 @@ export function remainingPrizeSlots(activity: Activity, prizeId: string | null):
 
 export function beginDraw(activity: Activity, prizeId: string | null, count: number, mode: PendingDraw['mode']): PendingDraw {
   assertActivityEditable(activity);
-  if (activity.archived) throw new Error('封存活動不能抽獎，請先重新開啟活動。');
+  if (activity.archived) throw new Error('封存活動不能抽獎，請先取消封存。');
   if (!Number.isInteger(count) || count < 1 || count > MAX_PARTICIPANT_COUNT) throw new Error('本輪人數須為 1–200。');
   if (!['single', 'sequence', 'batch'].includes(mode) || (mode === 'single' && count !== 1)) throw new Error('單人抽獎每輪只能抽出一位。');
-  if (activity.participants.length > MAX_PARTICIPANT_COUNT) throw new Error('每活動最多支援 200 位參加者。');
+  if (activity.participants.length > MAX_PARTICIPANT_COUNT) throw new Error('每場活動最多 200 人。');
   const prize = findPrize(activity, prizeId);
   const candidates = getCandidates(activity, prizeId);
-  if (count > remainingPrizeSlots(activity, prizeId)) throw new Error('本輪人數超過獎項剩餘名額，請調低人數。');
-  if (count > candidates.length) throw new Error(`目前只有 ${candidates.length} 位符合資格，請調低本輪人數或確認分組。`);
+  if (count > remainingPrizeSlots(activity, prizeId)) throw new Error('本輪人數超過獎項剩餘名額，請減少人數。');
+  if (count > candidates.length) throw new Error(`目前只有 ${candidates.length} 位符合資格，請減少本輪人數或確認分組。`);
   const pool = [...candidates];
   const winners = Array.from({ length: count }, () => ({ ...pool.splice(randomIndex(pool.length), 1)[0] }));
   const pending: PendingDraw = {

@@ -148,7 +148,7 @@ export function useAudio(preferences: Preferences, onNotice: (message: string) =
     const available = localChineseVoices();
     const voice = available.find((item) => item.voiceURI === preferencesRef.current.voiceURI) ?? available[0];
     if (!voice) {
-      noticeRef.current('此裝置沒有可用的本機中文語音。可安裝中文語音，或關閉朗讀繼續抽獎。');
+      noticeRef.current('這台裝置沒有可用的內建中文語音。可在裝置設定中加入中文語音，或關閉朗讀繼續抽獎。');
       return;
     }
     if (!text.trim()) return;

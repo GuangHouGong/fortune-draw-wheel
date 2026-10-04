@@ -88,7 +88,7 @@ describe('fresh-read durable transactions', () => {
     const callback = vi.fn();
     const unsubscribe = subscribeStore(callback);
     vi.spyOn(localStorage, 'setItem').mockImplementation(() => { throw new Error('QuotaExceeded'); });
-    await expect(transaction((data) => { data.activities[0].name = '尚未保存'; })).rejects.toThrow('資料未保存');
+    await expect(transaction((data) => { data.activities[0].name = '尚未保存'; })).rejects.toThrow('資料未儲存');
     expect(callback).not.toHaveBeenCalled();
     expect(readAppData().data.activities[0].name).toBe('正式活動');
     unsubscribe();
@@ -153,7 +153,7 @@ describe('explicit recovery of an unreadable store', () => {
     await expect(restoreFromBackup(backup)).rejects.toThrow('沒有覆寫');
     expect(localStorage.getItem(STORE_KEY)).toBe('{damaged');
     writes.mockImplementation((key, value) => { if (key === STORE_KEY) throw new Error('QuotaExceeded'); originalSet(key, value); });
-    await expect(restoreFromBackup(backup)).rejects.toThrow('備份尚未恢復');
+    await expect(restoreFromBackup(backup)).rejects.toThrow('備份尚未還原');
     expect(localStorage.getItem(STORE_KEY)).toBe('{damaged');
     expect(writes.mock.calls.some(([key]) => key.includes(':recovery:'))).toBe(true);
   });

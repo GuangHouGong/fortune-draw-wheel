@@ -147,7 +147,7 @@ describe('applying an import', () => {
   it('protects recorded participants from replacement while permitting code-matched updates', () => {
     const source = activity();
     source.records = [{ id: 'record-1', drawId: 'draw-1', participantId: 'person-1', label: '王小明', code: '001', groupName: '第一組', prizeId: null, prizeName: '自由抽獎', drawnAt: source.createdAt, status: 'won' }];
-    expect(() => applyParticipantImport(source, [{ label: '李小華', code: '002', group: '' }], { mode: 'replace', keepDuplicateNames: false })).toThrow('只能追加');
+    expect(() => applyParticipantImport(source, [{ label: '李小華', code: '002', group: '' }], { mode: 'replace', keepDuplicateNames: false })).toThrow('只能加入');
     const updated = applyParticipantImport(source, [{ label: '王大明', code: '001', group: '' }], { mode: 'append', keepDuplicateNames: false });
     expect(updated.participants[0].id).toBe(source.records[0].participantId);
     expect(updated.records[0].label).toBe('王小明');

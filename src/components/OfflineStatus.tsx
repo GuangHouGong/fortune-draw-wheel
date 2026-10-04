@@ -95,14 +95,14 @@ export function OfflineStatus({ data, onNotice }: Props) {
 
   const applyUpdate = async () => {
     if (!safeToReload()) {
-      noticeRef.current?.('本機還有未完成抽獎，請先完成本輪再更新。');
+      noticeRef.current?.('這台裝置還有未完成的抽獎，請先完成本輪再更新。');
       return;
     }
     setUpdating(true);
     try {
       // Re-read and save under the shared store lock before changing versions.
       await transaction((latest) => {
-        if (latest.activities.some((activity) => activity.pendingDraw)) throw new Error('本機還有未完成抽獎，請先完成本輪再更新。');
+        if (latest.activities.some((activity) => activity.pendingDraw)) throw new Error('這台裝置還有未完成的抽獎，請先完成本輪再更新。');
       });
       if (!safeToReload()) throw new Error('本輪抽獎已開始，會在完成後再提供更新。');
       await updateServiceWorker(true);

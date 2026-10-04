@@ -31,20 +31,20 @@ export default function BrowserMemoryPanel({
   return (
     <section className="control-section browser-memory" aria-labelledby="browser-memory-title">
       <div className="section-heading">
-        <h2 id="browser-memory-title">瀏覽器記憶</h2>
+        <h2 id="browser-memory-title">儲存在此瀏覽器</h2>
         <span className={`memory-state ${savedAt ? 'is-saved' : ''}`}>
-          {savedAt ? '已記住' : '尚未記住'}
+          {savedAt ? '已儲存' : '尚未儲存'}
         </span>
       </div>
 
-      <p className="field-hint">把目前名單、重複中獎與停止方式設定、中獎紀錄記在這台瀏覽器。</p>
+      <p className="field-hint">在目前的瀏覽器儲存名單、抽獎設定與中獎紀錄。清除瀏覽資料後，這份資料也會刪除。</p>
       <p className="memory-time">
-        {savedAt ? `上次記住：${formatSavedAt(savedAt)}` : '尚未建立瀏覽器記憶。'}
+        {savedAt ? `上次儲存：${formatSavedAt(savedAt)}` : '尚未儲存資料。'}
       </p>
 
       <div className="memory-actions">
         <button type="button" className="button button-ghost" onClick={onSave} disabled={disabled}>
-          記住目前資料
+          儲存目前資料
         </button>
         <button
           type="button"
@@ -52,7 +52,7 @@ export default function BrowserMemoryPanel({
           onClick={onRestore}
           disabled={disabled || !savedAt}
         >
-          還原記憶
+          還原已儲存資料
         </button>
         <button
           type="button"
@@ -60,7 +60,7 @@ export default function BrowserMemoryPanel({
           onClick={onClear}
           disabled={disabled || !savedAt}
         >
-          清除記憶
+          清除已儲存資料
         </button>
       </div>
     </section>

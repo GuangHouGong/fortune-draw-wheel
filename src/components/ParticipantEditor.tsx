@@ -53,17 +53,17 @@ export default function ParticipantEditor({
       <div className="section-heading">
         <h2 id="participants-title">抽獎名單</h2>
         <button type="button" className="button button-ghost" onClick={onReset} disabled={disabled}>
-          重設為 1-120
+          重設為 1～120
         </button>
       </div>
 
       <div className={`stats-grid ${isOverLimit ? 'is-over-limit' : ''}`} aria-label="抽獎統計">
         <div>
-          <span>總名單</span>
+          <span>名單人數</span>
           <strong>{totalCount}</strong>
         </div>
         <div>
-          <span>可抽</span>
+          <span>可參加抽獎</span>
           <strong>{availableCount}</strong>
         </div>
         <div>
@@ -97,9 +97,9 @@ export default function ParticipantEditor({
           htmlFor="participant-file"
           aria-disabled={disabled || isImporting}
         >
-          {isImporting ? '匯入中' : '匯入 Excel / CSV'}
+          {isImporting ? '正在匯入…' : '匯入 Excel／CSV'}
         </label>
-        <span className="import-hint">Excel 讀第一個工作表，優先抓姓名、編號、name 或 id 欄位。</span>
+        <span className="import-hint">Excel 只讀取第一張工作表，優先使用姓名、編號、name 或 id 欄位。</span>
       </div>
       <textarea
         id="participant-input"
@@ -124,7 +124,7 @@ export default function ParticipantEditor({
           onChange={(event) => onQuickCountChange(Number(event.target.value))}
         />
         <button type="button" className="button button-ghost" onClick={onGenerateSequential} disabled={disabled}>
-          產生
+          建立編號名單
         </button>
       </div>
 

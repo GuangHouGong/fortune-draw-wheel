@@ -37,7 +37,7 @@ function PrizeEditor({ prize, activity, index, blocked, onSave, onMove, onDelete
     const name = formValue(form, 'name');
     const quantity = Number(formValue(form, 'quantity'));
     const groupIds = allGroups ? null : new FormData(form).getAll('groups').map(String);
-    if (groupIds !== null && !groupIds.length) { setGroupError('請至少選一個可抽組別，或勾選全部參加者。'); return; }
+    if (groupIds !== null && !groupIds.length) { setGroupError('請至少選一個可參加的組別，或勾選所有參加者。'); return; }
     setGroupError('');
     if (name && Number.isInteger(quantity) && quantity >= Math.max(1, wonCount) && quantity <= 200) {
       onSave({ ...prize, name, quantity, groupIds });
@@ -46,17 +46,17 @@ function PrizeEditor({ prize, activity, index, blocked, onSave, onMove, onDelete
   return (
     <form className="panel stack" onSubmit={submit}>
       <div className="section-heading">
-        <h3>第 {index + 1} 項獎品</h3>
+        <h3>第 {index + 1} 個獎項</h3>
         <span className="badge">已中獎 {wonCount} / {prize.quantity}</span>
       </div>
       <div className="field-row">
         <label className="field">獎項名稱<input name="name" required maxLength={80} defaultValue={prize.name} disabled={blocked} /></label>
         <label className="field">名額<input name="quantity" type="number" inputMode="numeric" required min={Math.max(1, wonCount)} max={200} defaultValue={prize.quantity} disabled={blocked} /></label>
       </div>
-      <label className="field-row"><input type="checkbox" checked={allGroups} onChange={(event) => setAllGroups(event.target.checked)} disabled={blocked} />全部參加者皆可抽此獎</label>
+      <label className="field-row"><input type="checkbox" checked={allGroups} onChange={(event) => setAllGroups(event.target.checked)} disabled={blocked} />所有參加者都能抽這個獎項</label>
       {!allGroups && (
         <fieldset className="chips" disabled={blocked}>
-          <legend>可抽組別（可複選）</legend>
+          <legend>可參加的組別（可複選）</legend>
           {activity.groups.map((group) => (
             <label key={group.id}><input name="groups" type="checkbox" value={group.id} defaultChecked={prize.groupIds?.includes(group.id)} />{group.name}</label>
           ))}
@@ -115,7 +115,7 @@ export default function ActivitySetup({ activity, disabled, onChange, onNotice }
     setKeepDuplicateNames(false);
     setImportMode('append');
     setError('');
-    onNotice('已讀取名單，請確認欄位與預覽，再按套用。');
+    onNotice('已讀取名單，請確認欄位與預覽，再按「確認並套用名單」。');
   }
 
   async function handleFile(file: File) {
@@ -165,7 +165,7 @@ export default function ActivitySetup({ activity, disabled, onChange, onNotice }
   return (
     <div className="stack">
       {error && <p className="alert" role="alert">{error}</p>}
-      {disabled && <p className="alert">抽獎進行中或有待公布結果，請先完成公布再調整活動。</p>}
+      {disabled && <p className="alert">{activity.archived ? '這場活動已封存，請先回活動列表取消封存。' : '若有尚未公布的結果，請先完成本輪抽獎；資料儲存中，請稍候再調整。'}</p>}
       <section className="panel stack" aria-labelledby="setup-title">
         <div className="section-heading"><h2 id="setup-title">活動準備</h2><span className="badge">{activity.participants.length} 位參加者</span></div>
         <p className="muted">先確認名單與獎項，再到「現場抽獎」試抽。所有檔案只在這台裝置處理。</p>
@@ -204,13 +204,13 @@ export default function ActivitySetup({ activity, disabled, onChange, onNotice }
             <button className="button button-secondary" disabled={blocked}>儲存</button>
             <button type="button" className="button button-danger" disabled={blocked} onClick={() => {
               const affectedPrize = activity.prizes.find((prize) => prize.groupIds?.length === 1 && prize.groupIds.includes(group.id));
-              if (affectedPrize) { setError(`「${affectedPrize.name}」只開放此組抽獎，請先修改獎項的可抽組別，再刪除「${group.name}」。`); return; }
+              if (affectedPrize) { setError(`「${affectedPrize.name}」只開放此組抽獎，請先調整這個獎項開放的組別，再刪除「${group.name}」。`); return; }
               if (!window.confirm(`刪除「${group.name}」？組內參加者會改為未分組，限定此組的獎項請重新確認。`)) return;
               void save({ ...activity,
                 groups: activity.groups.filter((item) => item.id !== group.id),
                 participants: activity.participants.map((participant) => participant.groupId === group.id ? { ...participant, groupId: null } : participant),
                 prizes: activity.prizes.map((prize) => ({ ...prize, groupIds: prize.groupIds?.filter((id) => id !== group.id) ?? null })),
-              }, '組別已刪除，請確認獎項的可抽組別。');
+              }, '組別已刪除，請確認各獎項開放的組別。');
             }}>刪除</button>
           </form>
         ))}
@@ -218,7 +218,7 @@ export default function ActivitySetup({ activity, disabled, onChange, onNotice }
 
       <section className="panel stack" aria-labelledby="prizes-title">
         <div className="section-heading"><h2 id="prizes-title">獎項與抽獎順序</h2><span className="badge">{activity.prizes.length} 個獎項</span></div>
-        <p className="muted">依畫面順序抽獎。沒有獎項也可使用自由抽獎；已有紀錄的獎項保留歷史，不能刪除。</p>
+        <p className="muted">獎項會依畫面順序開獎。不設定獎項也能使用「自由抽獎」；已有抽獎紀錄的獎項不能刪除。</p>
         <form className="field-row" onSubmit={(event) => {
           event.preventDefault();
           const form = event.currentTarget;
@@ -250,7 +250,7 @@ export default function ActivitySetup({ activity, disabled, onChange, onNotice }
             if (file) void handleFile(file);
           }} />
         </label>
-        <p className="muted">Excel 讀第一張工作表；可選姓名、編號與組別欄位。編號需要補零時，請在原始 Excel 設為文字。</p>
+        <p className="muted">Excel 只讀取第一張工作表，可選姓名、編號與組別欄位。若編號含有開頭的 0（例如 001），請先在 Excel 將該欄設為「文字」。</p>
         <form className="stack" onSubmit={(event) => {
           event.preventDefault();
           try { showPreview(createImportTable(parsePastedParticipants(formValue(event.currentTarget, 'names')), false), '貼上名單'); }
@@ -272,9 +272,10 @@ export default function ActivitySetup({ activity, disabled, onChange, onNotice }
         }}>
           <label className="field">開始編號<input name="start" type="number" inputMode="numeric" min={0} defaultValue={1} required disabled={blocked} /></label>
           <label className="field">結束編號<input name="end" type="number" inputMode="numeric" min={0} defaultValue={100} required disabled={blocked} /></label>
-          <label className="field">補零位數<input name="padding" type="number" inputMode="numeric" min={0} max={12} defaultValue={0} required disabled={blocked} /></label>
+          <label className="field">編號位數（不足補 0）<input name="padding" type="number" inputMode="numeric" min={0} max={12} defaultValue={0} required disabled={blocked} /></label>
           <button className="button button-secondary" disabled={blocked}>預覽連號</button>
         </form>
+        <p className="muted">編號位數填 3，可產生 001、002 等三位數編號；填 0 則不補零。</p>
       </section>
 
       {table && <section className="panel stack" aria-labelledby="preview-title">
@@ -286,7 +287,7 @@ export default function ActivitySetup({ activity, disabled, onChange, onNotice }
         }} />第一列是欄位名稱，不加入名單</label>
         <div className="field-row">
           {(['labelColumn', 'codeColumn', 'groupColumn'] as const).map((key) => (
-            <label className="field" key={key}>{key === 'labelColumn' ? '姓名／顯示編號' : key === 'codeColumn' ? '唯一編號（選填）' : '組別（選填）'}
+            <label className="field" key={key}>{key === 'labelColumn' ? '姓名／顯示編號' : key === 'codeColumn' ? '編號（選填，不可重複）' : '組別（選填）'}
               <select value={mapping[key] ?? ''} onChange={(event) => updateMapping(key, event.target.value)} disabled={blocked}>
                 {key !== 'labelColumn' && <option value="">不使用此欄位</option>}
                 {table.columns.map((column, index) => <option value={index} key={index}>{column}（第 {index + 1} 欄）</option>)}
@@ -294,18 +295,18 @@ export default function ActivitySetup({ activity, disabled, onChange, onNotice }
             </label>
           ))}
         </div>
-        <div className="table-wrap"><table className="data-table"><caption>前 20 列預覽</caption><thead><tr><th scope="col">姓名／編號</th><th scope="col">唯一編號</th><th scope="col">組別</th></tr></thead><tbody>
+        <div className="table-wrap"><table className="data-table"><caption>前 20 列預覽</caption><thead><tr><th scope="col">姓名／編號</th><th scope="col">編號</th><th scope="col">組別</th></tr></thead><tbody>
           {previewRows.slice(0, 20).map((row, index) => <tr key={index}><td style={{ whiteSpace: 'pre-wrap' }}>{row.label || row.code}</td><td>{row.code || '—'}</td><td>{row.group || '未指定'}</td></tr>)}
         </tbody></table></div>
         {!previewRows.length && <p className="alert">所選欄位沒有名單，請調整欄位或取消「第一列是欄位名稱」。</p>}
         {duplicateCodes.length > 0 && <p className="alert">重複編號：{[...new Set(duplicateCodes)].slice(0, 10).join('、')}。請修正來源名單後重新匯入。</p>}
-        <label className="field-row"><input type="checkbox" checked={keepDuplicateNames} onChange={(event) => setKeepDuplicateNames(event.target.checked)} disabled={blocked} />保留沒有編號的同名者，將每列視為不同參加者</label>
-        <p className="muted">未勾選時，沒有編號的同名者會合併；不同唯一編號的同名者始終保留。追加時，相同編號會更新現有參加者並保留其識別。</p>
+        <label className="field-row"><input type="checkbox" checked={keepDuplicateNames} onChange={(event) => setKeepDuplicateNames(event.target.checked)} disabled={blocked} />保留沒有編號的同名者，每一列算一位參加者</label>
+        <p className="muted">未勾選時，沒有編號的同名者會合併成一位；編號不同的同名者會各自保留。加入名單時，若編號相同，會更新原本那位參加者的資料。</p>
         <fieldset className="chips" disabled={blocked}><legend>名單套用方式</legend>
-          <label><input type="radio" name="import-mode" value="append" checked={importMode === 'append'} onChange={() => setImportMode('append')} />追加或更新現有名單</label>
-          <label><input type="radio" name="import-mode" value="replace" checked={importMode === 'replace'} onChange={() => setImportMode('replace')} disabled={hasRecords} />替換整份名單</label>
+          <label><input type="radio" name="import-mode" value="append" checked={importMode === 'append'} onChange={() => setImportMode('append')} />加入或更新現有名單</label>
+          <label><input type="radio" name="import-mode" value="replace" checked={importMode === 'replace'} onChange={() => setImportMode('replace')} disabled={hasRecords} />取代整份名單</label>
         </fieldset>
-        {hasRecords && <p className="muted">已有抽獎紀錄，保護歷史名單，只能追加或更新。要換整份名單，請建立或複製新活動。</p>}
+        {hasRecords && <p className="muted">這場活動已有抽獎紀錄，只能加入或更新名單。若要換整份名單，請建立新活動或複製這場活動。</p>}
         <div className="field-row"><button type="button" className="button button-primary" onClick={() => void applyPreview()} disabled={blocked || !previewRows.length || duplicateCodes.length > 0}>確認並套用名單</button><button type="button" className="button button-secondary" disabled={blocked} onClick={() => setTable(null)}>關閉預覽</button></div>
       </section>}
 
@@ -313,21 +314,21 @@ export default function ActivitySetup({ activity, disabled, onChange, onNotice }
         <div className="section-heading"><h2 id="participants-title">參加者名單</h2><span className="badge">{activity.participants.length} / 200 人</span></div>
         <form className="field-row" onSubmit={(event) => submitParticipant(event)}>
           <label className="field">姓名／顯示編號<input name="label" required maxLength={100} disabled={blocked} /></label>
-          <label className="field">唯一編號（選填）<input name="code" maxLength={60} disabled={blocked} /></label>
+          <label className="field">編號（選填，不可重複）<input name="code" maxLength={60} disabled={blocked} /></label>
           <label className="field">組別<select name="groupId" disabled={blocked}><option value="">未分組</option>{activity.groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></label>
           <button className="button button-primary" disabled={blocked || activity.participants.length >= 200}>加入一位</button>
         </form>
         {!activity.participants.length ? <p className="muted">名單還是空的。上方可以貼上名單、匯入檔案或快速產生連號。</p> : <>
-          <p className="muted">調整後按「儲存」。已抽過的參加者保留紀錄，不能刪除；同名者建議填不同編號。</p>
-          <div className="table-wrap"><table className="data-table"><caption>本場活動名單</caption><thead><tr><th scope="col">姓名／顯示編號</th><th scope="col">唯一編號</th><th scope="col">組別</th><th scope="col">操作</th></tr></thead><tbody>
+          <p className="muted">修改後請按「儲存」。已有抽獎紀錄的參加者不能刪除；同名者建議填不同編號。</p>
+          <div className="table-wrap"><table className="data-table"><caption>本場活動名單</caption><thead><tr><th scope="col">姓名／顯示編號</th><th scope="col">編號</th><th scope="col">組別</th><th scope="col">操作</th></tr></thead><tbody>
             {activity.participants.map((participant) => {
               const formId = `participant-${participant.id}`;
               const drawn = activity.records.some((record) => record.participantId === participant.id);
               return <tr key={`${participant.id}:${participant.label}:${participant.code}:${participant.groupId}`}>
                 <td><form id={formId} onSubmit={(event) => submitParticipant(event, participant.id)}><input aria-label={`${participant.label}的姓名`} name="label" defaultValue={participant.label} required maxLength={100} disabled={blocked} /></form></td>
-                <td><input form={formId} aria-label={`${participant.label}的唯一編號`} name="code" defaultValue={participant.code} maxLength={60} disabled={blocked} /></td>
+                <td><input form={formId} aria-label={`${participant.label}的編號`} name="code" defaultValue={participant.code} maxLength={60} disabled={blocked} /></td>
                 <td><select form={formId} aria-label={`${participant.label}的組別`} name="groupId" defaultValue={participant.groupId ?? ''} disabled={blocked}><option value="">未分組</option>{activity.groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}</select></td>
-                <td><div className="field-row"><button form={formId} className="button button-secondary" disabled={blocked}>儲存</button><button type="button" className="button button-danger" disabled={blocked || drawn} title={drawn ? '已抽過的參加者需保留歷史' : undefined} onClick={() => {
+                <td><div className="field-row"><button form={formId} className="button button-secondary" disabled={blocked}>儲存</button><button type="button" className="button button-danger" disabled={blocked || drawn} title={drawn ? '這位參加者已有抽獎紀錄，無法刪除' : undefined} onClick={() => {
                   if (window.confirm(`從名單刪除「${participant.label}」？`)) void save({ ...activity, participants: activity.participants.filter((item) => item.id !== participant.id) }, '參加者已刪除。');
                 }}>刪除</button></div></td>
               </tr>;

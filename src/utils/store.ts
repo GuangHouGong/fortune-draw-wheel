@@ -57,7 +57,7 @@ export function readAppData(): { data: AppData; warnings: string[] } {
     if (raw !== null) {
       try { return { data: validateAppData(JSON.parse(raw)), warnings }; }
       catch (error) {
-        warnings.push(error instanceof Error ? `目前保存資料無法讀取。${error.message} 原始資料仍保留，可先下載原始資料，再選擇有效活動備份恢復。` : '目前保存資料無法讀取，原始資料仍保留，可先下載原始資料，再選擇有效活動備份恢復。');
+        warnings.push(error instanceof Error ? `目前儲存資料無法讀取。${error.message} 原始資料仍保留，可先下載原始資料，再選擇有效的活動備份還原。` : '目前儲存資料無法讀取，原始資料仍保留，可先下載原始資料，再選擇有效的活動備份還原。');
         return { data: createEmptyData(), warnings };
       }
     }
@@ -80,7 +80,7 @@ export function readAppData(): { data: AppData; warnings: string[] } {
       } else warnings.push('舊版手動備份格式不完整，原始資料仍保留。');
     }
     data.activeActivityId = data.activities.find((activity) => !activity.archived)?.id ?? null;
-    if (data.activities.length) warnings.push('已載入舊版活動與紀錄，所有舊版資料鍵值均保留。');
+    if (data.activities.length) warnings.push('已載入舊版活動與紀錄，舊版資料仍完整保留。');
     return { data, warnings };
   } catch {
     return { data: createEmptyData(), warnings: ['瀏覽器無法使用本機儲存。請允許網站儲存資料，或更換瀏覽器後使用。'] };
@@ -131,7 +131,7 @@ function writeTransaction(mutator: (data: AppData) => void): AppData {
   const raw = localStorage.getItem(STORE_KEY);
   if (raw !== null) {
     try { validateAppData(JSON.parse(raw)); }
-    catch { throw new Error('目前保存資料格式不完整，為保留原始資料，尚未覆寫。請先還原有效活動備份。'); }
+    catch { throw new Error('目前儲存資料格式不完整，為保留原始資料，尚未覆寫。請先還原有效活動備份。'); }
   }
   const before = readAppData().data;
   const data = JSON.parse(JSON.stringify(before)) as AppData;
@@ -139,7 +139,7 @@ function writeTransaction(mutator: (data: AppData) => void): AppData {
   ensurePendingUnchanged(before, data);
   validateAppData(data);
   try { localStorage.setItem(STORE_KEY, JSON.stringify(data)); }
-  catch { throw new Error('資料未保存：瀏覽器儲存空間不足或未允許儲存。本次變更尚未完成。'); }
+  catch { throw new Error('資料未儲存：瀏覽器儲存空間不足或未允許儲存。本次變更尚未完成。'); }
   notify(data);
   return data;
 }
@@ -156,15 +156,15 @@ export async function restoreFromBackup(input: unknown): Promise<AppData> {
   const backup = parseBackup(input);
   const restore = () => {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw === null) throw new Error('目前沒有損壞的保存資料，請使用一般活動備份匯入。');
+    if (raw === null) throw new Error('目前沒有損壞的儲存資料，請使用一般活動備份匯入。');
     let damaged = false;
     try { validateAppData(JSON.parse(raw)); } catch { damaged = true; }
-    if (!damaged) throw new Error('目前保存資料完整，請使用一般匯入以保留既有活動。');
+    if (!damaged) throw new Error('目前儲存資料完整，請使用一般匯入以保留既有活動。');
     const recoveryKey = `${STORE_KEY}:recovery:${Date.now()}-${createId()}`;
     try { localStorage.setItem(recoveryKey, raw); }
-    catch { throw new Error('原始資料尚未保存，因此沒有覆寫。請先下載原始資料並確認瀏覽器儲存空間。'); }
+    catch { throw new Error('原始資料尚未儲存，因此沒有覆寫。請先下載原始資料並確認瀏覽器儲存空間。'); }
     try { localStorage.setItem(STORE_KEY, JSON.stringify(backup)); }
-    catch { throw new Error('備份尚未恢復；原始資料仍保留，請確認瀏覽器儲存空間後重試。'); }
+    catch { throw new Error('備份尚未還原；原始資料仍保留，請確認瀏覽器儲存空間後重試。'); }
     notify(backup);
     return backup;
   };
@@ -176,7 +176,7 @@ export async function restoreFromBackup(input: unknown): Promise<AppData> {
 
 export function downloadRawRecovery(): void {
   const raw = localStorage.getItem(STORE_KEY);
-  if (raw === null) throw new Error('目前沒有可下載的原始保存資料。');
+  if (raw === null) throw new Error('目前沒有可下載的原始儲存資料。');
   downloadText(`功德會抽獎-原始資料-${localDateStamp()}.txt`, raw);
 }
 

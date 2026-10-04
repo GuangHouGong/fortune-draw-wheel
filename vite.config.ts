@@ -17,7 +17,7 @@ export default defineConfig({
         id: '/fortune-draw-wheel/',
         name: '土城廣厚宮功德會抽獎',
         short_name: '土城廣厚宮功德會抽獎',
-        description: '準備名單、現場抽獎與保存得獎紀錄，支援離線使用。',
+        description: '準備名單、現場開獎與下載中獎紀錄，支援離線使用。',
         lang: 'zh-TW',
         start_url: '/fortune-draw-wheel/',
         scope: '/fortune-draw-wheel/',

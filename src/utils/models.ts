@@ -23,7 +23,7 @@ export function createActivity(name: string): Activity {
 }
 
 export function assertActivityEditable(activity: Activity): void {
-  if (activity.pendingDraw) throw new Error('本活動尚有未完成抽獎，請先恢復並完成本輪。');
+  if (activity.pendingDraw) throw new Error('本活動尚有未完成抽獎，請先接續並完成本輪。');
 }
 
 export function duplicateActivity(activity: Activity): Activity {
@@ -91,7 +91,7 @@ export function validateAppData(value: unknown): AppData {
     if (groupIds.has(UNASSIGNED_GROUP_ID)) fail('分組識別碼');
     for (const group of groups) string(object(group, '分組').name, '分組名稱');
     const participants = activity.participants as unknown[];
-    if (participants.length > MAX_PARTICIPANT_COUNT) fail(`每活動最多 ${MAX_PARTICIPANT_COUNT} 人`);
+    if (participants.length > MAX_PARTICIPANT_COUNT) fail(`每場活動最多 ${MAX_PARTICIPANT_COUNT} 人`);
     const participantIds = uniqueIds(participants, '參加者');
     const validateParticipant = (entry: unknown) => {
       const participant = object(entry, '參加者');

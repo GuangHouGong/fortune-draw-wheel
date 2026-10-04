@@ -149,7 +149,7 @@ export function applyParticipantImport(
   options: { mode: 'append' | 'replace'; keepDuplicateNames: boolean },
 ): Activity {
   if (options.mode === 'replace' && (activity.records.length || activity.pendingDraw)) {
-    throw new Error('已有抽獎紀錄的活動只能追加或更新名單；完整替換請建立新活動。');
+    throw new Error('已有抽獎紀錄的活動只能加入新名單或更新既有名單；要取代整份名單，請建立新活動。');
   }
   if (!rows.length) throw new Error('沒有可套用的參加者，請確認姓名或編號欄位。');
   const groups = activity.groups.map((group) => ({ ...group }));
