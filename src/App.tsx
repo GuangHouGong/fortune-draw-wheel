@@ -22,6 +22,10 @@ export default function App() {
   const [saving, setSaving] = useState(false), [damaged, setDamaged] = useState(initial.warnings.some(w => w.startsWith('目前保存資料無法讀取')));
   const owner = useRef<(() => void) | null>(null), ownerVersion = useRef(0), messageRef = useRef<HTMLDivElement>(null);
   const activity = data.activities.find(a => a.id === currentRoute.id);
+  useEffect(() => {
+    document.documentElement.dataset.drawLargeText = String(data.preferences.largeText);
+    return () => { delete document.documentElement.dataset.drawLargeText; };
+  }, [data.preferences.largeText]);
   useEffect(() => { const handleHash = () => { setRoute(route()); setNotice(''); window.scrollTo({top:0,behavior:'instant'}); }; window.addEventListener('hashchange', handleHash); return () => window.removeEventListener('hashchange', handleHash); }, []);
   useEffect(() => subscribeStore(() => { const next = readAppData(); setData(next.data); setDamaged(next.warnings.some(w => w.startsWith('目前保存資料無法讀取'))); if (next.warnings.length) setNotice(next.warnings.join(' ')); }), []);
   useEffect(() => { void transaction(() => {}).then(setData).catch(error => setNotice(error instanceof Error ? error.message : '資料尚未保存，請先下載備份。')); return () => owner.current?.(); }, []);
